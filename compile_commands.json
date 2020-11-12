@@ -1,0 +1,29 @@
+[
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-Wp,-MD,/home/pi/program/linux/.net.o.d",
+            "-nostdinc",
+            "-isystem",
+            "/usr/lib/gcc/aarch64-linux-gnu/8/include",
+            "-I./arch/arm64/include",
+            "-I./arch/arm64/include/generated",
+            "-I./include",
+            "-I./arch/arm64/include/uapi",
+            "-I./arch/arm64/include/generated/uapi",
+            "-I./include/uapi",
+            "-I./include/generated/uapi",
+            "-include",
+            "./include/linux/kconfig.h",
+            "-include",
+            "./include/linux/compiler_types.h",
+            "-D__KERNEL__",
+            "-o",
+            "/home/pi/program/linux/net.o",
+            "../../../home/pi/program/linux/net.c"
+        ],
+        "directory": "/usr/src/linux-headers-5.4.51-v8+",
+        "file": "../../../home/pi/program/linux/net.c"
+    }
+]
