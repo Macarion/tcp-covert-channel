@@ -46,7 +46,6 @@ static uint hookCallBack(void *priv, struct sk_buff *skb, const struct nf_hook_s
         tcph = tcp_hdr(skb);
         if (!tcph->urg && !tcph->urg_ptr)
         {
-//            printk(KERN_CONT "%u", iph->daddr);
             map_send(&data_map, iph->daddr, &tcph->urg_ptr);
             tcpCheckSum(skb, tcph, iph);
         }
@@ -65,8 +64,6 @@ struct nf_hook_ops NfHook =
 static int Hook_Init(void)
 {
     int ret = 0;
-//    char ipStr[20];
-//    struct MapList *list_ptr;
 
     if (!map_loadFromFile(&data_map, __FILE_NAME))
     {
@@ -74,16 +71,6 @@ static int Hook_Init(void)
         return -1;
     }
     printMapChildren(&data_map);
-//    list_ptr = data_map.list;
-//    while (list_ptr)
-//    {
-//        printk(KERN_INFO "%s, %d, %s\n", ipnAddrToStr(ipStr, list_ptr->raw_data->ip),
-//            list_ptr->raw_data->size, list_ptr->raw_data->content);
-//        printHashValue(list_ptr->raw_data->hash, __HASH_SIZE);
-//        list_ptr = list_ptr->next;
-//    }
-//    info("\n");
-//    return -1;
 
     printk(KERN_INFO "SEND NET_HOOK STSRTED!\n");
 
