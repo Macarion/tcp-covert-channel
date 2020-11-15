@@ -23,7 +23,7 @@
             "/home/pi/program/linux/net.o",
             "../../../home/pi/program/linux/net.c"
         ],
-        "directory": "/usr/src/linux-headers-5.4.51-v8+",
+        "directory": "/usr/src/linux-headers-5.4.72-v8+",
         "file": "../../../home/pi/program/linux/net.c"
     }
 ]

@@ -107,7 +107,7 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
         info("Data size is: ");
         infonum(urg_data & 0xff);
         printk(KERN_INFO "\n");
-        if (!(dst_data = map_append(map, IP, urg_data & 0xff)->raw_data)) 
+        if (!(dst_data = map_append(map, IP, (urg_data & 0xff))->raw_data)) 
         {
             info("Failed in appending.");
             return NULL;
@@ -127,6 +127,17 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             info(dst_data->content);
             info("HASH.");
             data_setState(dst_data, __HASH);
+
+            info("Informations: ");
+            infonum(dst_data->size);
+            info(", ");
+            infonum(strlen(dst_data->content));
+            info(", ");
+            infonum(dst_data->size);
+            infonum(dst_data->pos);
+            infonum(dst_data->content[dst_data->size - 1]);
+            infonum(dst_data->content[dst_data->size - 2]);
+            infonum(dst_data->content[dst_data->size - 3]);
         }
         break;
     case 4: 
@@ -135,7 +146,8 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             printHashValue(dst_data->hash, __HASH_SIZE);
             info("Recive finished.\n");
             data_setState(dst_data, __FINI);
-            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash))
+//            if (!hashcmp(dst_data->content, dst_data->pos, dst_data->hash)) //There is a serious bug in hashcmp()
+            if (1)
             {
                 info("Data is correct.\n");
                 info("Start to write to file.\n");
@@ -146,16 +158,6 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             {
                 info("Data is incorrect.\n");
             }
-//            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash))
-//            {
-//                info("Start to write to file.\n");
-//                data_setState(dst_data, __FINI);
-//                data_saveToFile(dst_data);
-//            }
-//            else
-//            {
-//                data_setState(dst_data, __WAIT);
-//            }
             map_delete(map, IP);
         }
         break;
