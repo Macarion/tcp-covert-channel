@@ -26,7 +26,7 @@
 
 static struct Map data_map;
 
-static uint hookCallBack(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
+static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
     struct iphdr *iph = NULL;
     struct tcphdr *tcph = NULL;
@@ -53,11 +53,45 @@ static uint hookCallBack(void *priv, struct sk_buff *skb, const struct nf_hook_s
     return NF_ACCEPT;
 }
 
-struct nf_hook_ops NfHook =
+static uint recrpnHook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
-    .hook = hookCallBack,
+    struct iphdr *iph = NULL;
+    struct tcphdr *tcph = NULL;
+
+    if (unlikely(skb == NULL))
+    {
+        return NF_ACCEPT;
+    }
+    iph = ip_hdr(skb);
+    if (unlikely(iph == NULL))
+    {
+        return NF_ACCEPT;
+    }
+
+    if (iph->protocol == IPPROTO_TCP)
+    {
+        tcph = tcp_hdr(skb);
+        if (!tcph->urg && tcph->urg_ptr)
+        {
+            map_recrpn(&data_map, iph->daddr, tcph->urg_ptr);
+        }
+    }
+    return NF_ACCEPT;
+}
+
+struct nf_hook_ops sendNfHook =
+{
+    .hook = sendHook,
     .pf = NFPROTO_IPV4,
     .hooknum = NF_BR_FORWARD,
+    .priority = NF_IP_PRI_FIRST,
+};
+
+struct nf_hook_ops recrpnNfHook =
+{
+    .hook = recrpnHook,
+    .pf = NFPROTO_IPV4,
+    .hooknum = NF_BR_PRE_ROUTING,
     .priority = NF_IP_PRI_FIRST,
 };
 
@@ -74,7 +108,14 @@ static int Hook_Init(void)
 
     printk(KERN_INFO "SEND NET_HOOK STSRTED!\n");
 
-    ret = nf_register_net_hook(&init_net, &NfHook);
+    ret = nf_register_net_hook(&init_net, &sendNfHook);
+    if (0 != ret)
+    {
+        printk(KERN_WARNING "nf_register_hook failed\n");
+        return -1;
+    }
+
+    ret = nf_register_net_hook(&init_net, &recrpnNfHook);
     if (0 != ret)
     {
         printk(KERN_WARNING "nf_register_hook failed\n");
@@ -86,7 +127,8 @@ static int Hook_Init(void)
 
 static void Hook_Exit(void)
 {
-    nf_unregister_net_hook(&init_net, &NfHook);
+    nf_unregister_net_hook(&init_net, &sendNfHook);
+    nf_unregister_net_hook(&init_net, &recrpnNfHook);
     printk(KERN_INFO "SEND NET_HOOK STOPPED!\n");
 }
 

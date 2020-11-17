@@ -42,10 +42,14 @@ struct DataRaw* data_reset(struct DataRaw* data_ptr, unsigned int IP, int size)
 
 struct DataRaw* data_saveToFile(struct DataRaw* data_ptr)
 {
-    char save_info[100] = {0};
+    char save_info[50] = {0};
     char ipaddr_tmp[20] = {0};
+//    struct tm time;
 
-    sprintf(save_info, "[%d][%s]", data_ptr->time, ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
+//    getDateAndTime(&time);
+//    saveTimeToStr(save_info, &time);
+//    sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
+    sprintf(save_info, "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
     appendToFile(__FILE_RECV, save_info, strlen(save_info));
     appendToFile(__FILE_RECV, data_ptr->content, data_ptr->size - 1);
 
@@ -59,6 +63,12 @@ struct DataRaw* data_saveToFile(struct DataRaw* data_ptr)
 struct DataRaw* data_setState(struct DataRaw* data_ptr, int state)
 {
     data_ptr->state = state;
+    return data_ptr;
+}
+
+struct DataRaw* data_setSstate(struct DataRaw* data_ptr, int sstate)
+{
+    data_ptr->sstate = sstate;
     return data_ptr;
 }
 
@@ -107,7 +117,7 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
         info("Data size is: ");
         infonum(urg_data & 0xff);
         printk(KERN_INFO "\n");
-        if (!(dst_data = map_append(map, IP, (urg_data & 0xff))->raw_data)) 
+        if (!(dst_data = map_append(map, IP, urg_data & 0xff)->raw_data)) 
         {
             info("Failed in appending.");
             return NULL;
@@ -127,17 +137,6 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             info(dst_data->content);
             info("HASH.");
             data_setState(dst_data, __HASH);
-
-            info("Informations: ");
-            infonum(dst_data->size);
-            info(", ");
-            infonum(strlen(dst_data->content));
-            info(", ");
-            infonum(dst_data->size);
-            infonum(dst_data->pos);
-            infonum(dst_data->content[dst_data->size - 1]);
-            infonum(dst_data->content[dst_data->size - 2]);
-            infonum(dst_data->content[dst_data->size - 3]);
         }
         break;
     case 4: 
@@ -146,23 +145,22 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             printHashValue(dst_data->hash, __HASH_SIZE);
             info("Recive finished.\n");
             data_setState(dst_data, __FINI);
-//            if (!hashcmp(dst_data->content, dst_data->pos, dst_data->hash)) //There is a serious bug in hashcmp()
-            if (1)
+            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash)) //debug
             {
                 info("Data is correct.\n");
                 info("Start to write to file.\n");
                 data_saveToFile(dst_data);
                 info("Write to file finished.\n");
+                map_delete(map, IP);
             }
             else
             {
                 info("Data is incorrect.\n");
+                data_setSstate(dst_data, __RESD);
             }
-            map_delete(map, IP);
         }
         break;
     default:
-//        info("Default");
         switch (state)
         {
         case __FILE:
@@ -179,6 +177,11 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
 
 struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
 {
+    unsigned char randChar = 0;
+    get_random_bytes(&randChar, 1);
+    *urg_ptr = ntohs(0x0500 + randChar);
+    return data_ptr;
+
     switch (data_ptr->state)
     {
     case __WAIT:
@@ -186,14 +189,14 @@ struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
     case __FILE:
         if (!(data_ptr->pos % __BLOCK) && !data_ptr->sstate)
         {
-            *urg_ptr = ntohs((6 << 8) + 'r');
+            *urg_ptr = ntohs((5 << 8) + 'r');
             data_ptr->sstate = 1;
         }
         break;
     case __HASH:
         if (data_ptr->hash_pos == __HASH_SIZE && data_ptr->sstate == 1)
         {
-            *urg_ptr = ntohs((6 << 8) + 'r');
+            *urg_ptr = ntohs((5 << 8) + 'r');
             data_ptr->sstate = 2;
         }
         break;
@@ -208,11 +211,6 @@ struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
 struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr)
 {
     unsigned char randChar = 0;
-//    if (data_ptr->state < __FINI)
-//    {
-//        info("data state: ");
-//        infonum(data_ptr->state);
-//    }
     switch(data_ptr->state)
     {
     case __STOP:
@@ -223,14 +221,12 @@ struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr)
     case __WAIT:
         info("FILE.\n");
         get_random_bytes(&randChar, 1);
-        *urg_ptr = ntohs(0x0200 + '2');
+        *urg_ptr = ntohs(0x0200 + randChar);
         data_ptr->state = __FILE;
         break;
     case __FILE:
         if (data_ptr->pos < data_ptr->size)
         {
-//            *urg_ptr = ntohs((data_ptr->content[data_ptr->pos] << 8)
-//                    + data_ptr->content[data_ptr->pos + 1]);
             *urg_ptr = data_ptr->content[data_ptr->pos] & 0xff;
             ++data_ptr->pos;
             if (data_ptr->pos < data_ptr->size)
@@ -241,7 +237,7 @@ struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr)
         {
             info("HASH.\n");
             get_random_bytes(&randChar, 1);
-            *urg_ptr = ntohs(0x0300 + '3');
+            *urg_ptr = ntohs(0x0300 + randChar);
             data_ptr->state = __HASH;
         }
         break;
@@ -256,7 +252,7 @@ struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr)
         {
             info("END.\n");
             get_random_bytes(&randChar, 1);
-            *urg_ptr = ntohs(0x0400 + '4');
+            *urg_ptr = ntohs(0x0400 + randChar);
             data_ptr->state = __FINI;
         }
         break;
@@ -448,7 +444,14 @@ struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg
 {
     struct DataRaw* data_ptr;
     data_ptr = map_findData(map, IP);
-    data_respon(data_ptr, urg_ptr);
+    if (!data_ptr)
+        return NULL;
+    if (data_ptr->sstate == __RESD)
+    {
+        data_ptr->sstate = __REOK;
+        data_respon(data_ptr, urg_ptr);
+        map_delete(map, IP);
+    }
     return data_ptr;
 }
 
@@ -463,6 +466,19 @@ struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_p
         {
             map_delete(map, IP);
         }
+    }
+    return data_ptr;
+}
+
+struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_data)
+{
+    struct DataRaw* data_ptr;
+    data_ptr = map_findData(map, IP);
+    if (!data_ptr)
+        return NULL;
+    if ((urg_data & 0xff) == 5)
+    {
+        data_setState(data_ptr, __STOP);
     }
     return data_ptr;
 }
