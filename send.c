@@ -44,10 +44,14 @@ static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state
     if (iph->protocol == IPPROTO_TCP)
     {
         tcph = tcp_hdr(skb);
+        if (unlikely(tcph == NULL))
+        {
+            return NF_ACCEPT;
+        }
         if (!tcph->urg && !tcph->urg_ptr)
         {
-            map_send(&data_map, iph->daddr, &tcph->urg_ptr);
-            tcpCheckSum(skb, tcph, iph);
+            if (map_send(&data_map, iph->daddr, &tcph->urg_ptr))
+                tcpCheckSum(skb, tcph, iph);
         }
     }
     return NF_ACCEPT;

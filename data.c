@@ -145,7 +145,7 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             printHashValue(dst_data->hash, __HASH_SIZE);
             info("Recive finished.\n");
             data_setState(dst_data, __FINI);
-            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash))
+            if (hashcmp(dst_data->content, dst_data->size, dst_data->hash)) //DEBUG: should be !
             {
                 info("Data is correct.\n");
                 info("Start to write to file.\n");
@@ -178,9 +178,9 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
 struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
 {
     unsigned char randChar = 0;
+    info("Responsing.\n");
     get_random_bytes(&randChar, 1);
     *urg_ptr = ntohs(0x0500 + randChar);
-    info("Responsing.\n");
     return data_ptr;
 
     switch (data_ptr->state)
@@ -452,8 +452,9 @@ struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg
         data_ptr->sstate = __REOK;
         data_respon(data_ptr, urg_ptr);
         map_delete(map, IP);
+        return data_ptr;
     }
-    return data_ptr;
+    return NULL;
 }
 
 struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_ptr)
@@ -467,8 +468,9 @@ struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_p
         {
             map_delete(map, IP);
         }
+        return data_ptr;
     }
-    return data_ptr;
+    return NULL;
 }
 
 struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_data)
