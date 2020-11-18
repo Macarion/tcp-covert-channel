@@ -1,3 +1,4 @@
+obj-m := recv.o
 obj-m := send.o
 
 ccflags-y += "-fno-stack-protector"

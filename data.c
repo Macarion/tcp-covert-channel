@@ -44,12 +44,12 @@ struct DataRaw* data_saveToFile(struct DataRaw* data_ptr)
 {
     char save_info[50] = {0};
     char ipaddr_tmp[20] = {0};
-//    struct tm time;
+    struct tm time;
 
-//    getDateAndTime(&time);
-//    saveTimeToStr(save_info, &time);
-//    sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
-    sprintf(save_info, "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
+    getDateAndTime(&time);
+    saveTimeToStr(save_info, &time);
+    sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
+//    sprintf(save_info, "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
     appendToFile(__FILE_RECV, save_info, strlen(save_info));
     appendToFile(__FILE_RECV, data_ptr->content, data_ptr->size - 1);
 
@@ -145,7 +145,7 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             printHashValue(dst_data->hash, __HASH_SIZE);
             info("Recive finished.\n");
             data_setState(dst_data, __FINI);
-            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash)) //debug
+            if (!hashcmp(dst_data->content, dst_data->size, dst_data->hash))
             {
                 info("Data is correct.\n");
                 info("Start to write to file.\n");
@@ -180,6 +180,7 @@ struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
     unsigned char randChar = 0;
     get_random_bytes(&randChar, 1);
     *urg_ptr = ntohs(0x0500 + randChar);
+    info("Responsing.\n");
     return data_ptr;
 
     switch (data_ptr->state)
@@ -479,6 +480,7 @@ struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_
     if ((urg_data & 0xff) == 5)
     {
         data_setState(data_ptr, __STOP);
+        info("Resend request.\n");
     }
     return data_ptr;
 }

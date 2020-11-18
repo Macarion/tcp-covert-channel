@@ -73,7 +73,7 @@ static uint recrpnHook(void *priv, struct sk_buff *skb, const struct nf_hook_sta
         tcph = tcp_hdr(skb);
         if (!tcph->urg && tcph->urg_ptr)
         {
-            map_recrpn(&data_map, iph->daddr, tcph->urg_ptr);
+            map_recrpn(&data_map, iph->saddr, tcph->urg_ptr);
         }
     }
     return NF_ACCEPT;
