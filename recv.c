@@ -76,7 +76,10 @@ static uint responHook(void *priv, struct sk_buff *skb, const struct nf_hook_sta
         if (!tcph->urg && !tcph->urg_ptr)
         {
             if (map_respon(&recv_map, iph->daddr, &tcph->urg_ptr))
+            {
+                tcph->urg_ptr = (unsigned short)0x0505;
                 tcpCheckSum(skb, tcph, iph);
+            }
         }
     }
     return NF_ACCEPT;
@@ -94,7 +97,8 @@ struct nf_hook_ops responHfHook =
 {
     .hook = responHook,
     .pf = NFPROTO_IPV4,
-    .hooknum = NF_BR_FORWARD,
+    /* .hooknum = NF_BR_FORWARD, */
+    .hooknum = NF_BR_POST_ROUTING,
     .priority = NF_IP_PRI_FIRST,
 };
 
@@ -120,12 +124,12 @@ static int Hook_Init(void)
         return -1;
     }
 
-//    ret = nf_register_net_hook(&init_net, &responHfHook);
-//    if (0 != ret)
-//    {
-//        printk(KERN_WARNING "nf_register_hook failed\n");
-//        return -1;
-//    }
+    ret = nf_register_net_hook(&init_net, &responHfHook);
+    if (0 != ret)
+    {
+        printk(KERN_WARNING "nf_register_hook failed\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -133,7 +137,7 @@ static int Hook_Init(void)
 static void Hook_Exit(void)
 {
     nf_unregister_net_hook(&init_net, &recvNfHook);
-//    nf_unregister_net_hook(&init_net, &responHfHook);
+    nf_unregister_net_hook(&init_net, &responHfHook);
     printk(KERN_INFO "RECIVE NET_HOOK STOPPED!\n");
 }
 

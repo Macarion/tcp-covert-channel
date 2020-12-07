@@ -94,7 +94,6 @@ int hashcmpFile(const char * filename, const unsigned char * hash)
 
 int hashcmp(const char* buf, unsigned int datalen, const unsigned char* hash)
 {
-    /* return 0; */
     unsigned char bufhash[50] = {0};
     check_hash((unsigned char*)buf, datalen, bufhash);
     printHashValue(hash, 20);
