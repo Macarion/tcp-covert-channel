@@ -51,7 +51,7 @@ struct DataRaw* data_saveToFile(struct DataRaw* data_ptr)
     sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
 //    sprintf(save_info, "[%s]", ipnAddrToStr(ipaddr_tmp, data_ptr->ip));
     appendToFile(__FILE_RECV, save_info, strlen(save_info));
-    appendToFile(__FILE_RECV, data_ptr->content, data_ptr->size - 1);
+    appendToFile(__FILE_RECV, data_ptr->content, data_ptr->pos);
 
     if (data_ptr->content[data_ptr->size - 2] != '\n')
     {
@@ -94,11 +94,12 @@ struct DataRaw* data_appendHash(struct DataRaw* data_ptr, const void* data, int 
     return data_ptr;
 }
 
-struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short urg_data)
+struct DataRaw* map_recv(struct Map* map, unsigned int IP, unsigned short urg_data)
 {
     struct DataRaw* dst_data;
     char saveBuf[2];
     int state;
+    int ret;
     saveBuf[0] = urg_data >> 8;
     saveBuf[1] = urg_data & 0xff;
     printk(KERN_CONT "%c%c", urg_data >> 8, urg_data & 0xff);
@@ -111,13 +112,21 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
     {
         return NULL;
     }
+    if (state == __HASH && dst_data->hash_pos < __HASH_SIZE)
+    {
+        goto _recv_datas;
+    }
     switch (urg_data >> 8)
     {
     case 1: 
         info("Data size is: ");
         infonum(urg_data & 0xff);
         printk(KERN_INFO "\n");
-        if (!(dst_data = map_append(map, IP, urg_data & 0xff)->raw_data)) 
+        if (dst_data)
+        {
+            data_reset(dst_data, IP, urg_data & 0xff);
+        }
+        else if (!(dst_data = map_append(map, IP, urg_data & 0xff)->raw_data)) 
         {
             info("Failed in appending.");
             return NULL;
@@ -145,7 +154,7 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             printHashValue(dst_data->hash, __HASH_SIZE);
             info("Recive finished.\n");
             data_setState(dst_data, __FINI);
-            if (hashcmp(dst_data->content, dst_data->size, dst_data->hash)) //DEBUG: should be !
+            if (!(ret = hashcmp(dst_data->content, dst_data->size, dst_data->hash)))
             {
                 info("Data is correct.\n");
                 info("Start to write to file.\n");
@@ -156,19 +165,21 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short 
             else
             {
                 info("Data is incorrect.\n");
-                data_setSstate(dst_data, __RESD);
+                infonum(ret);
+                //data_setSstate(dst_data, __RESD);
             }
         }
         break;
     default:
+        _recv_datas:
         switch (state)
         {
         case __FILE:
-//            data_appendData(dst_data, &urg_data, 2);
+            /* data_appendData(dst_data, &urg_data, 2); */
             data_appendData(dst_data, saveBuf, 2);
             break;
         case __HASH:
-//            data_appendHash(dst_data, &urg_data, 2);
+            /* data_appendHash(dst_data, &urg_data, 2); */
             data_appendHash(dst_data, saveBuf, 2);
         }
     }
@@ -180,7 +191,7 @@ struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
     unsigned char randChar = 0;
     info("Responsing.\n");
     get_random_bytes(&randChar, 1);
-    *urg_ptr = ntohs(0x0500 + randChar);
+//    *urg_ptr = ntohs(0x0500 + randChar); // DEBUG
     return data_ptr;
 
     switch (data_ptr->state)
@@ -331,7 +342,7 @@ void map_delete(struct Map* map, unsigned int IP)
 
     if (!list_ptr)
     {
-        if (map->list)
+        if (map->list && map->list->raw_data->ip == IP)
         {
             tmp = map->list;
             map->list = tmp->next;
@@ -383,8 +394,8 @@ struct DataRaw* map_saveToFile(struct Map* map, unsigned int IP)
 struct Map* map_loadFromFile(struct Map* map, const char* file)
 {
     unsigned int p_ip;
-    int p_size;
-    int pp_ip[4];
+    int ret = 0;
+    int p_size; int pp_ip[4];
     int pos = 0;
     char *file_content = getFileContentPtr(file);
     struct MapList *list_ptr;
@@ -394,10 +405,12 @@ struct Map* map_loadFromFile(struct Map* map, const char* file)
     }
     while (file_content[pos] != '\0')
     {
-        sscanf(file_content + pos, "[%d.%d.%d.%d]", &pp_ip[0],
+        ret = sscanf(file_content + pos, "[%d.%d.%d.%d]", &pp_ip[0],
                 &pp_ip[1],
                 &pp_ip[2],
                 &pp_ip[3]);
+        if (!ret)
+            break;
         p_ip = (pp_ip[0] << 24) + (pp_ip[1] << 16) + (pp_ip[2] << 8) + pp_ip[3];
 
         pos += countInfoLen(file_content + pos);
@@ -494,9 +507,10 @@ void printMapChildren(struct Map *map)
     list_ptr = map->list;
     while (list_ptr)
     {
-        printk(KERN_INFO "%s, %d, %s\n", ipnAddrToStr(ipStr, list_ptr->raw_data->ip),
-            list_ptr->raw_data->size, list_ptr->raw_data->content);
+        printk(KERN_INFO "%s, %d, ", ipnAddrToStr(ipStr, list_ptr->raw_data->ip),
+            list_ptr->raw_data->size);
         printHashValue(list_ptr->raw_data->hash, __HASH_SIZE);
+        printk(KERN_INFO "%s\n", list_ptr->raw_data->content);
         list_ptr = list_ptr->next;
     }
 

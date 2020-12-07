@@ -94,15 +94,24 @@ struct nf_hook_ops responHfHook =
 {
     .hook = responHook,
     .pf = NFPROTO_IPV4,
-    .hooknum = NF_BR_POST_ROUTING,
+    .hooknum = NF_BR_FORWARD,
     .priority = NF_IP_PRI_FIRST,
 };
 
 static int Hook_Init(void)
 {
     int ret = 0;
+    //char tempStr[50] = "Some important messages.";
+    //unsigned char hashStr[30] = {0};
+
+    //check_hash((unsigned char*)tempStr, strlen(tempStr), hashStr);
+    //printHashValue(hashStr, 20);
+    //hashStr[0]--;
+    //ret = hashcmp(tempStr, strlen(tempStr), hashStr);
+    //infonum(ret);
 
     printk(KERN_INFO "RECIVE NET_HOOK STSRTED!\n");
+    //return -1;
 
     ret = nf_register_net_hook(&init_net, &recvNfHook);
     if (0 != ret)
@@ -111,12 +120,12 @@ static int Hook_Init(void)
         return -1;
     }
 
-    ret = nf_register_net_hook(&init_net, &responHfHook);
-    if (0 != ret)
-    {
-        printk(KERN_WARNING "nf_register_hook failed\n");
-        return -1;
-    }
+//    ret = nf_register_net_hook(&init_net, &responHfHook);
+//    if (0 != ret)
+//    {
+//        printk(KERN_WARNING "nf_register_hook failed\n");
+//        return -1;
+//    }
 
     return 0;
 }
@@ -124,7 +133,7 @@ static int Hook_Init(void)
 static void Hook_Exit(void)
 {
     nf_unregister_net_hook(&init_net, &recvNfHook);
-    nf_unregister_net_hook(&init_net, &responHfHook);
+//    nf_unregister_net_hook(&init_net, &responHfHook);
     printk(KERN_INFO "RECIVE NET_HOOK STOPPED!\n");
 }
 

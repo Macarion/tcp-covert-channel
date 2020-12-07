@@ -79,7 +79,7 @@ struct DataRaw* map_appendHash(struct Map* map, unsigned int IP, char *data, int
 struct DataRaw* map_findData(struct Map* map, unsigned int IP);
 struct MapList* map_findParent(struct Map* map, unsigned int IP);
 
-struct DataRaw* map_recv(struct Map* map, unsigned int IP, const unsigned short urg_data);
+struct DataRaw* map_recv(struct Map* map, unsigned int IP, unsigned short urg_data);
 struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg_ptr);
 struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_ptr);
 struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_data);

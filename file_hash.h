@@ -7,6 +7,7 @@
 #include <linux/crypto.h>
 #include <crypto/hash.h>
 #include <linux/string.h>
+#include "functions.h"
 
 MODULE_LICENSE("GPL");
 
