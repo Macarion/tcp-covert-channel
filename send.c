@@ -87,7 +87,8 @@ struct nf_hook_ops sendNfHook =
 {
     .hook = sendHook,
     .pf = NFPROTO_IPV4,
-    .hooknum = NF_BR_FORWARD,
+    /* .hooknum = NF_BR_FORWARD, */
+    .hooknum = NF_BR_POST_ROUTING,
     .priority = NF_IP_PRI_FIRST,
 };
 

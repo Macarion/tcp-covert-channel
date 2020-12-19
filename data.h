@@ -26,7 +26,8 @@ enum STATUS
 enum RESPON
 {
     __REOK,
-    __RESD
+    __RESD,
+    __REFI
 };
 
 struct DataRaw
@@ -52,6 +53,7 @@ struct MapList
 struct Map
 {
     int count;
+    int cooldown;
     struct MapList* list;
 };
 

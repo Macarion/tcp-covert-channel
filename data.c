@@ -159,7 +159,8 @@ struct DataRaw* map_recv(struct Map* map, unsigned int IP, unsigned short urg_da
                 info("Start to write to file.\n");
                 data_saveToFile(dst_data);
                 info("Write to file finished.\n");
-                map_delete(map, IP);
+                data_setSstate(dst_data, __REFI);
+                /* map_delete(map, IP); */
             }
             else
             {
@@ -189,7 +190,15 @@ struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr)
     unsigned char randChar = 0;
     info("Responsing.\n");
     get_random_bytes(&randChar, 1);
-    /* *urg_ptr = ntohs(0x0500 + randChar); */
+    switch (data_ptr->sstate)
+    {
+    case __RESD:
+        /* *urg_ptr = ntohs(0x0500 + randChar); */
+        break;
+    case __REFI:
+        /* *urg_ptr = ntohs(0x0600 + randChar); */
+        break;
+    }
     return data_ptr;
 
     switch (data_ptr->state)
@@ -263,7 +272,7 @@ struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr)
             info("END.\n");
             get_random_bytes(&randChar, 1);
             *urg_ptr = ntohs(0x0400 + randChar);
-            data_ptr->state = __FINI;
+            data_ptr->state = __REST;
         }
         break;
     case __REST:
@@ -458,10 +467,10 @@ struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg
     data_ptr = map_findData(map, IP);
     if (!data_ptr)
         return NULL;
-    if (data_ptr->sstate == __RESD)
+    if (data_ptr->sstate != __REOK)
     {
-        data_ptr->sstate = __REOK;
         data_respon(data_ptr, urg_ptr);
+        data_ptr->sstate = __REOK;
         map_delete(map, IP);
         return data_ptr;
     }
@@ -471,14 +480,15 @@ struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg
 struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_ptr)
 {
     struct DataRaw* data_ptr;
+    if (map->cooldown > 0)
+    {
+        map->cooldown--;
+        return NULL;
+    }
     data_ptr = map_findData(map, IP);
     if (data_ptr)
     {
         data_send(data_ptr, urg_ptr);
-        if (data_ptr->state == __FINI)
-        {
-            map_delete(map, IP);
-        }
         return data_ptr;
     }
     return NULL;
@@ -490,10 +500,18 @@ struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_
     data_ptr = map_findData(map, IP);
     if (!data_ptr)
         return NULL;
-    if ((urg_data & 0xff) == 5)
+    switch (urg_data & 0xff)
     {
+    case 5:
         data_setState(data_ptr, __STOP);
         info("Resend request.\n");
+        break;
+    case 6:
+        data_setState(data_ptr, __FINI);
+        map_delete(map, IP);
+        map->cooldown = 8;
+        info("Send successfully.\n");
+        break;
     }
     return data_ptr;
 }
