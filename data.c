@@ -2,7 +2,7 @@
 
 Data *_append(unsigned int ip)
 {
-    if (map.count <= map.size)
+    if (map.count == map.size)
     {
         struct _map_node *t = map.maps;
         map.maps = kcalloc(map.size * 2, sizeof(struct _map_node), GFP_KERNEL);
@@ -17,11 +17,13 @@ Data *_append(unsigned int ip)
     return t;
 }
 
-void append_data(unsigned int ip, int size)
+Data *append_data(unsigned int ip, int size)
 {
     Data *d = _append(ip);
     d->size = size;
     d->content = kcalloc(1, sizeof(char) * size, GFP_KERNEL);
+    d->s_state = d->r_state = _WAIT;
+    return d;
 }
 
 int find_index(unsigned int ip)
@@ -48,40 +50,39 @@ Data *find_data(unsigned int ip)
 void del_data(unsigned int ip)
 {
     int i = find_index(ip);
+    if (i == -1) return;
+
     for (; i < map.count - 1; ++i)
     {
         memcpy(map.maps + i, map.maps + i + 1, sizeof(struct _map_node));
     }
     map.maps[map.count].ip = 0;
     map.maps[map.count].data = NULL;
-    map.count--;
+    map.count > 0 ? map.count-- : (map.count = 0);
+
+    kfree(map.maps[i].data->content);
+    kfree(map.maps[i].data);
 }
 
-int add_content(unsigned int ip, const void *m, int size)
+int add_content(Data *pdata, const void *m, int size)
 {
-    Data *t = find_data(ip);
-    if (!t)
-        return -1;
-    if (t->cont_pos + size < t->size)
+    if (pdata->cont_pos + size < pdata->size)
     {
-        memcpy(t->content + t->cont_pos, m, size);
+        memcpy(pdata->content + pdata->cont_pos, m, size);
         return size;
     }
     return 0;
 }
 
-void *get_content(unsigned int ip, void *m, int size)
+int get_content(Data *pdata, void *m, int size)
 {
-    Data *t = find_data(ip);
-    if (!t)
-        return NULL;
-    if (t->cont_pos + size < t->size)
+    if (pdata->cont_pos + size < pdata->size)
     {
-        memcpy(m, t->content + t->cont_pos, size);
-        t->cont_pos += size;
-        return m;
+        memcpy(m, pdata->content + pdata->cont_pos, size);
+        pdata->cont_pos += size;
+        return size;
     }
-    return NULL;
+    return 0;
 }
 
 unsigned short _checksum(const char *cont, int size)
@@ -99,19 +100,16 @@ unsigned short _checksum(const char *cont, int size)
     }
     while (sum >> 16)
     {
-        sum = (sum >> 16) + sum & 0xffff;
+        sum = (sum >> 16) + (sum & 0xffff);
     }
     return ~sum;
 
 }
 
-unsigned short check_chk(unsigned int ip)
+unsigned short check_chk(Data *pdata)
 {
     /* unsigned int sum; */
-    Data *t = find_data(ip);
-    if (!t)
-        return 0;
-    return _checksum(t->content, t->size);
+    return _checksum(pdata->content, pdata->size);
     /* for (int i = 0; i * 2 < t->size; ++i) */
     /* { */
         /* sum += (t->content[i * 2] << 8) + t->content[i * 2 + 1]; */
@@ -122,6 +120,8 @@ unsigned short check_chk(unsigned int ip)
     /* } */
     /* return ~sum; */
 }
+
+/* {{{ */
 
 /* int get_data_content(unsigned int ip, int size, void *buf) */
 /* { */
@@ -137,34 +137,95 @@ unsigned short check_chk(unsigned int ip)
     /* return 0; */
 /* } */
 
-int get_rstate(unsigned int ip)
+/* }}} */
+
+int get_rstate(Data *pdata)
 {
-    Data *d = find_data(ip);
-    if (!d)
-        return _NULL;
-    return d->r_state;
+    return pdata->r_state;
 }
 
-int get_sstate(unsigned int ip)
+int get_sstate(Data *pdata)
 {
-    Data *d = find_data(ip);
-    if (!d)
-        return _NULL;
-    return d->s_state;
+    return pdata->s_state;
 }
 
-int set_rstate(unsigned int ip, int state)
+int set_rstate(Data *pdata, int state)
 {
-    Data *d = find_data(ip);
-    if (!d)
-        return _NULL;
-    return d->r_state = state;
+    return pdata->r_state = state;
 }
 
-int set_sstate(unsigned int ip, int state)
+int set_sstate(Data *pdata, int state)
 {
-    Data *d = find_data(ip);
-    if (!d)
-        return _NULL;
-    return d->s_state = state;
+    return pdata->s_state = state;
+}
+
+int save_to_file(const char *fname, Data *pdata)
+{
+    char save_info[50] = {0};
+    char ipaddr_tmp[20] = {0};
+    struct tm time;
+
+    getDateAndTime(&time);
+    saveTimeToStr(save_info, &time);
+    sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, pdata->ip));
+
+    append_to_file(fname, save_info, strlen(save_info));
+    append_to_file(fname, pdata->content, pdata->size);
+
+    if (pdata->content[pdata->size - 2] != '\n')
+    {
+        append_to_file(fname, "\n", 1);
+    }
+    return pdata->size;
+}
+
+int load_from_file(const char *fname)
+{
+    unsigned int p_ip;
+    int ret = 0;
+    int p_size; int pp_ip[4];
+    int pos = 0;
+    int count = 0;
+    Data *pdata;
+
+    int cont_size = get_file_length(fname);
+    if (cont_size++ == -1)
+        return -1;
+    char *cont = kmalloc(cont_size * sizeof(char), GFP_KERNEL);
+    if (!cont)
+        return -1;
+
+    if (!get_file_content(fname, cont, cont_size))
+        return -1;
+
+    while (cont[pos] != '\0')
+    {
+        ret = sscanf(cont + pos, "[%d.%d.%d.%d]", &pp_ip[0],
+                &pp_ip[1],
+                &pp_ip[2],
+                &pp_ip[3]);
+        if (!ret)
+            break;
+        p_ip = (pp_ip[0] << 24) + (pp_ip[1] << 16) + (pp_ip[2] << 8) + pp_ip[3];
+
+        pos += countInfoLen(cont + pos);
+        p_size = countDataLen(cont + pos);
+        pdata = append_data(ntohl(p_ip), p_size);
+        count++;
+        
+        strcpyn(pdata->content, cont + pos, p_size);
+        pos += p_size;
+    }
+    kfree(cont);
+    return count;
+}
+
+int print_all_datas(void)
+{
+    int i;
+    for (i = 0; i < map.count; ++i)
+    {
+        printk(KERN_INFO "%d. %s\n", i + 1, map.maps[i].data->content);
+    }
+    return map.count;
 }

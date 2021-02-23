@@ -2,27 +2,33 @@
 
 int send_data(unsigned int ip, void *buf, int size)
 {
-    int state = get_sstate(ip);
+    Data *pd = find_data(ip);
+    if (!pd) return -1;
+
+    int state = get_sstate(pd);
     switch (state)
     {
         case _NULL: break;
         case _FINI:
             del_data(ip);
+            break;
 
         //Send content
         case _SEND: 
-            if (get_content(ip, buf, size))
+            if (get_content(pd, buf, size))
             {
                 break;
             }
-            set_sstate(ip, _CHEK);
+            set_sstate(pd, _CHEK);
             break;
         case _WAIT:
-            set_sstate(ip, _SEND);
+            set_sstate(pd, _SEND);
+            break;
         case _CHEK:
             {
-                unsigned short chksum = check_chk(ip);
+                unsigned short chksum = check_chk(pd);
                 memcpy(buf, &chksum, sizeof(chksum));
+                set_sstate(pd, _FINI);
             }
     }
     return 0;
@@ -30,35 +36,39 @@ int send_data(unsigned int ip, void *buf, int size)
 
 void recv_data(unsigned int ip, const void *buf, int size)
 {
-    int state = get_rstate(ip);
+    Data *pd = find_data(ip);
+    if (!pd) return;
+
+    int state = get_rstate(pd);
     switch (state)
     {
         case _NULL: break;
         case _WAIT:
-            set_rstate(ip, _RECV);
+            set_rstate(pd, _RECV);
             break;
         case _RECV:
-            if (add_content(ip, buf, size))
+            if (!add_content(pd, buf, size))
             {
-                set_rstate(ip, _CHEK);
+                set_rstate(pd, _CHEK);
             }
             break;
         case _FINI:
+            save_to_file(SAVEFILE, pd);
             del_data(ip);
             break;
         case _CHEK:
             {
-                unsigned short chksum = check_chk(ip);
+                unsigned short chksum = check_chk(pd);
                 if (!memcmp(&chksum, buf, sizeof(chksum)))
                 {
-                    set_rstate(ip, _FINI);
+                    set_rstate(pd, _FINI);
                     break;
                 }
-                set_rstate(ip, _WAIT);
+                set_rstate(pd, _WAIT);
                 break;
             }
     }
-    /* add_content(ip, buf, size); */
+    /* add_content(pd, buf, size); */
 }
 
 

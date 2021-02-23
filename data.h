@@ -4,6 +4,10 @@
 #include <linux/slab.h>
 #include <linux/skbuff.h>
 
+#include "file.h"
+#include "time.h"
+#include "functions.h"
+
 enum STATUS
 {
     _WAIT,
@@ -42,26 +46,34 @@ static Map map;
 
 Data *_append(unsigned int);
 
-void append_data(unsigned int, int);
+Data *append_data(unsigned int, int);
 
 Data *find_data(unsigned int ip);
 
 void del_data(unsigned int ip);
 
-int add_content(unsigned int ip, const void *m, int size);
+int add_content(Data *pdata, const void *m, int size);
 
-void *get_content(unsigned int ip, void *m, int size);
+int get_content(Data *pdata, void *m, int size);
 
-unsigned short check_chk(unsigned int ip);
+unsigned short check_chk(Data *pdata);
 
-int get_data_content(unsigned int ip, int size, void *buf);
+/* int get_data_content(Data *pdata, int size, void *buf); */
 
-int get_rstate(unsigned int ip);
+int get_rstate(Data *pdata);
 
-int get_sstate(unsigned int ip);
+int get_sstate(Data *pdata);
 
-int set_rstate(unsigned int ip, int state);
+int set_rstate(Data *pdata, int state);
 
-int set_sstate(unsigned int ip, int state);
+int set_sstate(Data *pdata, int state);
+
+int save_to_file(const char *fname, Data *pdata);
+
+int load_from_file(const char *fname);
+
+int print_all_datas(void);
+
+#include "data.c"
 
 #endif
