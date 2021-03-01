@@ -171,7 +171,8 @@ int save_to_file(const char *fname, Data *pdata)
     sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, pdata->ip));
 
     append_to_file(fname, save_info, strlen(save_info));
-    append_to_file(fname, pdata->content, pdata->size);
+    append_to_file(fname, pdata->content, pdata->size - 1);
+    infonum(pdata->size);
 
     if (pdata->content[pdata->size - 2] != '\n')
     {
@@ -233,12 +234,12 @@ int print_all_datas(void)
     return i;
 }
 
-int save_all_datas(void)
+int save_all_datas(const char *fname)
 {
     int i;
     for (i = 0; i < map.count; ++i)
     {
-        save_to_file("recived", map.maps[i].data);
+        save_to_file(fname, map.maps[i].data);
     }
     return i;
 }
