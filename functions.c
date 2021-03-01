@@ -72,7 +72,7 @@ void print(const char *str)
 int strcpyn(char *tar, const char *str, int size)
 {
     int pos;
-    for (pos = 0; str[pos] != '\n' && str[pos] != '\0' && pos < size - 1; ++pos)
+    for (pos = 0; str[pos] != '\n' && str[pos] != '\0' && pos < size; ++pos)
     {
         tar[pos] = str[pos];
     }
@@ -101,6 +101,6 @@ int countDataLen(const char *str)
 {
     int pos;
     for (pos = 0; str[pos] != '\n' && str[pos] != '\0'; ++pos);
-    return ++pos;
+    return pos;
 }
 

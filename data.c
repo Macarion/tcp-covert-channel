@@ -22,7 +22,7 @@ Data *append_data(unsigned int ip, int size)
 {
     Data *d = _append(ip);
     d->size = size;
-    d->content = kcalloc(1, sizeof(char) * size, GFP_KERNEL);
+    d->content = kcalloc(1, size + 1, GFP_KERNEL);
     d->s_state = d->r_state = _WAIT;
     return d;
 }
@@ -171,8 +171,7 @@ int save_to_file(const char *fname, Data *pdata)
     sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, pdata->ip));
 
     append_to_file(fname, save_info, strlen(save_info));
-    append_to_file(fname, pdata->content, pdata->size - 1);
-    infonum(pdata->size);
+    append_to_file(fname, pdata->content, pdata->size);
 
     if (pdata->content[pdata->size - 2] != '\n')
     {
@@ -216,7 +215,7 @@ int load_from_file(const char *fname)
         count++;
         
         strcpyn(pdata->content, cont + pos, p_size);
-        pos += p_size;
+        pos += p_size + 1;
     }
     kfree(cont);
     return count;
