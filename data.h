@@ -74,6 +74,4 @@ int load_from_file(const char *fname);
 
 int print_all_datas(void);
 
-#include "data.c"
-
 #endif

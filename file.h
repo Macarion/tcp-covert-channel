@@ -10,5 +10,4 @@ long long get_file_length(const char* filename);
 char* get_file_content(const char* filename, char* digest, int size);
 char* get_file_content_ptr(const char* filename);
 
-#include "file.c"
 #endif

@@ -11,6 +11,4 @@ MODULE_LICENSE("GPL");
 struct tm* getDateAndTime(struct tm *dtm);
 char* saveTimeToStr(char *str, const struct tm *time);
 
-#include "time.c"
-
 #endif

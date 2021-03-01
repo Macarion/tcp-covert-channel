@@ -22,5 +22,4 @@ int strcpyn(char *tar, const char *str, int size);
 int countInfoLen(const char *str);
 int countDataLen(const char *str);
 
-#include "functions.c"
 #endif

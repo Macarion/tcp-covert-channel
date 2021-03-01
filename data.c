@@ -5,14 +5,15 @@ Data *_append(unsigned int ip)
     if (map.count == map.size)
     {
         struct _map_node *t = map.maps;
-        map.maps = kcalloc(map.size * 2, sizeof(struct _map_node), GFP_KERNEL);
+        map.maps = kcalloc(map.size == 0 ? 1 : map.size * 2, sizeof(struct _map_node), GFP_KERNEL);
         memcpy(map.maps, t, sizeof(struct _map_node) * map.size);
-        map.size *= 2;
+        map.size = map.size == 0 ? 1 : map.size * 2;
         kfree(t);
     }
     Data *t = kcalloc(1, sizeof(Data), GFP_KERNEL);
     map.maps[map.count].ip = ip;
     map.maps[map.count].data = t;
+    map.maps[map.count].data->ip = ip;
     map.count++;
     return t;
 }
@@ -222,10 +223,22 @@ int load_from_file(const char *fname)
 
 int print_all_datas(void)
 {
+    char ip_str[20];
     int i;
     for (i = 0; i < map.count; ++i)
     {
-        printk(KERN_INFO "%d. %s\n", i + 1, map.maps[i].data->content);
+        ipnAddrToStr(ip_str, map.maps[i].data->ip);
+        printk(KERN_INFO "%d. [%s] %s\n", i + 1, ip_str, map.maps[i].data->content);
     }
-    return map.count;
+    return i;
+}
+
+int save_all_datas(void)
+{
+    int i;
+    for (i = 0; i < map.count; ++i)
+    {
+        save_to_file("recived", map.maps[i].data);
+    }
+    return i;
 }

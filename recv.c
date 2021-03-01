@@ -15,8 +15,6 @@
 #include <linux/netfilter_bridge.h>
 #include <linux/netfilter/x_tables.h>
 
-#define SAVEFILE "/etc/covert/recived"
-
 #include "handle.h"
 
 // MODULE_LICENSE("GPL");

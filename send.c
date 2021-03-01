@@ -15,9 +15,7 @@
 #include <linux/netfilter_bridge.h>
 #include <linux/netfilter/x_tables.h>
 
-#define LOADFILE "/etc/covert/send"
-#define SAVEFILE "/etc/covert/recived"
-
+#include "config.h"
 #include "handle.h"
 
 //MODULE_LICENSE("GPL");
