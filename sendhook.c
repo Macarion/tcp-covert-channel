@@ -17,6 +17,7 @@
 
 #include "config.h"
 #include "handle.h"
+#include "device.h"
 
 /* MODULE_LICENSE("Dual BSD/GPL"); */
 
