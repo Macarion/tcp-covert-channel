@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "data.h"
+#include "device.h"
 
 int send_data(unsigned int ip, void *buf, int size);
 

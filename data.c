@@ -2,6 +2,7 @@
 
 Data *_append(unsigned int ip)
 {
+    Data *t;
     if (map.count == map.size)
     {
         struct _map_node *t = map.maps;
@@ -10,10 +11,9 @@ Data *_append(unsigned int ip)
         map.size = map.size == 0 ? 1 : map.size * 2;
         kfree(t);
     }
-    Data *t = kcalloc(1, sizeof(Data), GFP_KERNEL);
-    map.maps[map.count].ip = ip;
+    t = kcalloc(1, sizeof(Data), GFP_KERNEL);
+    map.maps[map.count].ip = t->ip = ip;
     map.maps[map.count].data = t;
-    map.maps[map.count].data->ip = ip;
     map.count++;
     return t;
 }
@@ -53,6 +53,9 @@ void del_data(unsigned int ip)
     int i = find_index(ip);
     if (i == -1) return;
 
+    kfree(map.maps[i].data->content);
+    kfree(map.maps[i].data);
+
     for (; i < map.count - 1; ++i)
     {
         memcpy(map.maps + i, map.maps + i + 1, sizeof(struct _map_node));
@@ -60,35 +63,53 @@ void del_data(unsigned int ip)
     map.maps[map.count].ip = 0;
     map.maps[map.count].data = NULL;
     map.count > 0 ? map.count-- : (map.count = 0);
-
-    kfree(map.maps[i].data->content);
-    kfree(map.maps[i].data);
 }
 
 int add_content(Data *pdata, const void *m, int size)
 {
-    if (pdata->cont_pos + size < pdata->size)
+    if (pdata->cont_pos + size <= pdata->size)
     {
         memcpy(pdata->content + pdata->cont_pos, m, size);
+        pdata->cont_pos += size;
         return size;
     }
-    return 0;
+    if (pdata->cont_pos == pdata->size)
+    {
+        return 0;
+    }
+    else
+    {
+        size = pdata->size - pdata->cont_pos;
+        memcpy(pdata->content + pdata->cont_pos, m, size);
+        pdata->cont_pos += size;
+        return size;
+    }
 }
 
 int get_content(Data *pdata, void *m, int size)
 {
-    if (pdata->cont_pos + size < pdata->size)
+    if (pdata->cont_pos + size <= pdata->size)
     {
         memcpy(m, pdata->content + pdata->cont_pos, size);
         pdata->cont_pos += size;
         return size;
     }
-    return 0;
+    if (pdata->cont_pos == pdata->size)
+    {
+        return 0;
+    }
+    else
+    {
+        size = pdata->size - pdata->cont_pos;
+        memcpy(m, pdata->content + pdata->cont_pos, size);
+        pdata->cont_pos += size;
+        return size;
+    }
 }
 
 unsigned short _checksum(const char *cont, int size)
 {
-    unsigned int sum;
+    unsigned int sum = 0;
     if (size & 1)
     {
         size--;
@@ -188,11 +209,12 @@ int load_from_file(const char *fname)
     int pos = 0;
     int count = 0;
     Data *pdata;
+    char *cont;
 
     int cont_size = get_file_length(fname);
     if (cont_size++ == -1)
         return -1;
-    char *cont = kmalloc(cont_size * sizeof(char), GFP_KERNEL);
+    cont = kmalloc(cont_size * sizeof(char), GFP_KERNEL);
     if (!cont)
         return -1;
 

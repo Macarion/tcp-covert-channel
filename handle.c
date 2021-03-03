@@ -2,10 +2,11 @@
 
 int send_data(unsigned int ip, void *buf, int size)
 {
+    int state;
     Data *pd = find_data(ip);
     if (!pd) return -1;
 
-    int state = get_sstate(pd);
+    state = get_sstate(pd);
     switch (state)
     {
         case _NULL: break;
@@ -36,10 +37,11 @@ int send_data(unsigned int ip, void *buf, int size)
 
 void recv_data(unsigned int ip, const void *buf, int size)
 {
+    int state;
     Data *pd = find_data(ip);
     if (!pd) return;
 
-    int state = get_rstate(pd);
+    state = get_rstate(pd);
     switch (state)
     {
         case _NULL: break;

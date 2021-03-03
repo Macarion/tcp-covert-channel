@@ -18,7 +18,7 @@
 #include "config.h"
 #include "handle.h"
 
-//MODULE_LICENSE("GPL");
+/* MODULE_LICENSE("Dual BSD/GPL"); */
 
 #define __NET_DEVICE "eth0"
 
