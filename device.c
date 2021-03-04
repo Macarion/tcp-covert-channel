@@ -20,14 +20,28 @@ static int covert_dev_release(struct inode *inode, struct file *file)
     return 0;
 }
 
-loff_t covert_dev_llseek (struct file *file, loff_t offset, int where)
+loff_t covert_dev_llseek(struct file *file, loff_t offset, int where)
 {
-    read_pdata = find_data(where);
+    read_pdata = find_data(offset);
+    if (!read_pdata)
+    {
+        return 0;
+    }
     return read_pdata->size;
 }
 
 ssize_t covert_dev_read(struct file *file, char __user *buf, size_t count, loff_t *offset)
 {
+    if (!read_pdata)
+    {
+        return 0;
+    }
+    if (read_pdata->size > count)
+    {
+        return 0;
+    }
+    raw_copy_to_user(buf, read_pdata->content, read_pdata->size);
+    read_pdata = NULL;
     return 0;
 }
 
@@ -83,7 +97,7 @@ int device_init(void)
     if (!ret) {
         major = MAJOR(devnum);
         minor = MINOR(devnum);
-        printk("major = %d; minor = %d\n", major, minor);
+        /* printk("major = %d; minor = %d\n", major, minor); */
     }
 
     cdev_init(&covert_dev, &fops);
