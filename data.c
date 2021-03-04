@@ -18,6 +18,17 @@ Data *_append(unsigned int ip)
     return t;
 }
 
+void free_map(void)
+{
+    int i;
+    for (i = 0; i < map.count; ++i)
+    {
+        kfree(map.maps[i].data->content);
+        kfree(map.maps[i].data);
+    }
+    kfree(map.maps);
+}
+
 Data *append_data(unsigned int ip, int size)
 {
     Data *d = _append(ip);
@@ -63,6 +74,15 @@ void del_data(unsigned int ip)
     map.maps[map.count].ip = 0;
     map.maps[map.count].data = NULL;
     map.count > 0 ? map.count-- : (map.count = 0);
+
+    if (map.count * 2 <= map.size)
+    {
+        struct _map_node *t = map.maps;
+        map.maps = kcalloc(map.size == 1 ? 1 : map.size / 2, sizeof(struct _map_node), GFP_KERNEL);
+        memcpy(map.maps, t, sizeof(struct _map_node) * map.count);
+        map.size = map.size == 1 ? 1 : map.size / 2;
+        kfree(t);
+    }
 }
 
 int add_content(Data *pdata, const void *m, int size)
@@ -189,7 +209,7 @@ int save_to_file(const char *fname, Data *pdata)
 
     getDateAndTime(&time);
     saveTimeToStr(save_info, &time);
-    sprintf(save_info + strlen(save_info), "[%s]", ipnAddrToStr(ipaddr_tmp, pdata->ip));
+    sprintf(save_info + strlen(save_info), "[%s] ", ipnAddrToStr(ipaddr_tmp, pdata->ip));
 
     append_to_file(fname, save_info, strlen(save_info));
     append_to_file(fname, pdata->content, pdata->size);
@@ -241,6 +261,13 @@ int load_from_file(const char *fname)
     }
     kfree(cont);
     return count;
+}
+
+void print_data(Data *pdata)
+{
+    char ip_str[20];
+    ipnAddrToStr(ip_str, pdata->ip);
+    printk(KERN_INFO "[%s][%d] %s\n", ip_str, pdata->size, pdata->content);
 }
 
 int print_all_datas(void)

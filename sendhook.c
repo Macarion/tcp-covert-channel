@@ -90,14 +90,6 @@ struct nf_hook_ops sendNfHook =
     .priority = NF_IP_PRI_FIRST,
 };
 
-struct nf_hook_ops recrpnNfHook =
-{
-    .hook = recrpnHook,
-    .pf = NFPROTO_IPV4,
-    .hooknum = NF_BR_PRE_ROUTING,
-    .priority = NF_IP_PRI_FIRST,
-};
-
 static int Hook_Init(void)
 {
     int ret = 0;
@@ -107,21 +99,14 @@ static int Hook_Init(void)
         info("Failed in reading file.\n");
         return -1;
     }
-    print_all_datas();
-    save_all_datas(SAVEFILE);
 
-    return -1;
+    device_init();
 
-    printk(KERN_INFO "SEND NET_HOOK STSRTED!\n");
+    /* return -1; */
 
-    ret = nf_register_net_hook(&init_net, &sendNfHook);
-    if (0 != ret)
-    {
-        printk(KERN_WARNING "nf_register_hook failed\n");
-        return -1;
-    }
+    /* printk(KERN_INFO "SEND NET_HOOK STSRTED!\n"); */
 
-    /* ret = nf_register_net_hook(&init_net, &recrpnNfHook); */
+    /* ret = nf_register_net_hook(&init_net, &sendNfHook); */
     /* if (0 != ret) */
     /* { */
         /* printk(KERN_WARNING "nf_register_hook failed\n"); */
@@ -133,9 +118,12 @@ static int Hook_Init(void)
 
 static void Hook_Exit(void)
 {
-    nf_unregister_net_hook(&init_net, &sendNfHook);
-    /* nf_unregister_net_hook(&init_net, &recrpnNfHook); */
-    printk(KERN_INFO "SEND NET_HOOK STOPPED!\n");
+    device_exit();
+    print_all_datas();
+    save_all_datas(SAVEFILE);
+    free_map();
+    /* nf_unregister_net_hook(&init_net, &sendNfHook); */
+    /* printk(KERN_INFO "SEND NET_HOOK STOPPED!\n"); */
 }
 
 module_init(Hook_Init);

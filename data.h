@@ -46,6 +46,8 @@ static Map map;
 
 Data *_append(unsigned int);
 
+void free_map(void);
+
 Data *append_data(unsigned int, int);
 
 Data *find_data(unsigned int ip);
@@ -71,6 +73,8 @@ int set_sstate(Data *pdata, int state);
 int save_to_file(const char *fname, Data *pdata);
 
 int load_from_file(const char *fname);
+
+void print_data(Data *pdata);
 
 int print_all_datas(void);
 

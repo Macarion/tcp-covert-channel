@@ -6,7 +6,7 @@
 
 #define __CST (8 * 3600)
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual BSD/GPL");
 
 struct tm* getDateAndTime(struct tm *dtm);
 char* saveTimeToStr(char *str, const struct tm *time);
