@@ -49,7 +49,7 @@ static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state
         {
             /* if (map_send(&data_map, iph->daddr, &tcph->urg_ptr)) */
                 /* tcpCheckSum(skb, tcph, iph); */
-            send_data(iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr));
+            send_data(&send_map, iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr));
         }
     }
     return NF_ACCEPT;
@@ -94,7 +94,7 @@ static int Hook_Init(void)
 {
     int ret = 0;
 
-    if (load_from_file(LOADFILE) <= 0)
+    if (load_from_file(&send_map, LOADFILE) <= 0)
     {
         info("Failed in reading file.\n");
         return -1;
@@ -119,9 +119,9 @@ static int Hook_Init(void)
 static void Hook_Exit(void)
 {
     device_exit();
-    print_all_datas();
-    save_all_datas(SAVEFILE);
-    free_map();
+    print_all_datas(&send_map);
+    save_all_datas(&send_map, SAVEFILE);
+    free_map(&send_map);
     /* nf_unregister_net_hook(&init_net, &sendNfHook); */
     /* printk(KERN_INFO "SEND NET_HOOK STOPPED!\n"); */
 }

@@ -1,9 +1,9 @@
 #include "handle.h"
 
-int send_data(unsigned int ip, void *buf, int size)
+int send_data(Map *map, unsigned int ip, void *buf, int size)
 {
     int state;
-    Data *pd = find_data(ip);
+    Data *pd = find_data(map, ip);
     if (!pd) return -1;
 
     state = get_sstate(pd);
@@ -11,7 +11,7 @@ int send_data(unsigned int ip, void *buf, int size)
     {
         case _NULL: break;
         case _FINI:
-            del_data(ip);
+            del_data(map, ip);
             break;
 
         //Send content
@@ -35,10 +35,10 @@ int send_data(unsigned int ip, void *buf, int size)
     return 0;
 }
 
-void recv_data(unsigned int ip, const void *buf, int size)
+void recv_data(Map *map, unsigned int ip, const void *buf, int size)
 {
     int state;
-    Data *pd = find_data(ip);
+    Data *pd = find_data(map, ip);
     if (!pd) return;
 
     state = get_rstate(pd);
@@ -56,7 +56,7 @@ void recv_data(unsigned int ip, const void *buf, int size)
             break;
         case _FINI:
             save_to_file(SAVEFILE, pd);
-            del_data(ip);
+            del_data(map, ip);
             break;
         case _CHEK:
             {

@@ -42,17 +42,18 @@ typedef struct _map
     struct _map_node *maps;
 } Map;
 
-static Map map;
+static Map send_map;
+static Map recv_map;
 
-Data *_append(unsigned int);
+Data *_append(Map *map, unsigned int);
 
-void free_map(void);
+void free_map(Map *map);
 
-Data *append_data(unsigned int, int);
+Data *append_data(Map *map, unsigned int, int);
 
-Data *find_data(unsigned int ip);
+Data *find_data(Map *map, unsigned int ip);
 
-void del_data(unsigned int ip);
+void del_data(Map *map, unsigned int ip);
 
 int add_content(Data *pdata, const void *m, int size);
 
@@ -72,12 +73,12 @@ int set_sstate(Data *pdata, int state);
 
 int save_to_file(const char *fname, Data *pdata);
 
-int load_from_file(const char *fname);
+int load_from_file(Map *map, const char *fname);
 
 void print_data(Data *pdata);
 
-int print_all_datas(void);
+int print_all_datas(Map *map);
 
-int save_all_datas(const char *fname);
+int save_all_datas(Map *map, const char *fname);
 
 #endif

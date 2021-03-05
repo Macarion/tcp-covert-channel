@@ -20,9 +20,9 @@ enum METHOD {
     M_WRITE
 };
 
-static int covert_dev_open(struct inode *inode, struct file *file);
+int covert_dev_open(struct inode *inode, struct file *file);
 
-static int covert_dev_release(struct inode *inode, struct file *file);
+int covert_dev_release(struct inode *inode, struct file *file);
 
 loff_t covert_dev_llseek (struct file *file, loff_t offset, int where);
 

@@ -1,49 +1,49 @@
 #include "data.h"
 
-Data *_append(unsigned int ip)
+Data *_append(Map *map, unsigned int ip)
 {
     Data *t;
-    if (map.count == map.size)
+    if (map->count == map->size)
     {
-        struct _map_node *t = map.maps;
-        map.maps = kcalloc(map.size == 0 ? 1 : map.size * 2, sizeof(struct _map_node), GFP_KERNEL);
-        memcpy(map.maps, t, sizeof(struct _map_node) * map.size);
-        map.size = map.size == 0 ? 1 : map.size * 2;
+        struct _map_node *t = map->maps;
+        map->maps = kcalloc(map->size == 0 ? 1 : map->size * 2, sizeof(struct _map_node), GFP_KERNEL);
+        memcpy(map->maps, t, sizeof(struct _map_node) * map->size);
+        map->size = map->size == 0 ? 1 : map->size * 2;
         kfree(t);
     }
     t = kcalloc(1, sizeof(Data), GFP_KERNEL);
-    map.maps[map.count].ip = t->ip = ip;
-    map.maps[map.count].data = t;
-    map.count++;
+    map->maps[map->count].ip = t->ip = ip;
+    map->maps[map->count].data = t;
+    map->count++;
     return t;
 }
 
-void free_map(void)
+void free_map(Map *map)
 {
     int i;
-    for (i = 0; i < map.count; ++i)
+    for (i = 0; i < map->count; ++i)
     {
-        kfree(map.maps[i].data->content);
-        kfree(map.maps[i].data);
+        kfree(map->maps[i].data->content);
+        kfree(map->maps[i].data);
     }
-    kfree(map.maps);
+    kfree(map->maps);
 }
 
-Data *append_data(unsigned int ip, int size)
+Data *append_data(Map *map, unsigned int ip, int size)
 {
-    Data *d = _append(ip);
+    Data *d = _append(map, ip);
     d->size = size;
     d->content = kcalloc(1, size + 1, GFP_KERNEL);
     d->s_state = d->r_state = _WAIT;
     return d;
 }
 
-int find_index(unsigned int ip)
+int find_index(Map *map, unsigned int ip)
 {
     int i;
-    for (i = 0; i < map.count; ++i)
+    for (i = 0; i < map->count; ++i)
     {
-        if (map.maps[i].ip == ip)
+        if (map->maps[i].ip == ip)
         {
             return i;
         }
@@ -51,36 +51,36 @@ int find_index(unsigned int ip)
     return -1;
 }
 
-Data *find_data(unsigned int ip)
+Data *find_data(Map *map, unsigned int ip)
 {
-    int i = find_index(ip);
+    int i = find_index(map, ip);
     if (i == -1)
         return NULL;
-    return map.maps[i].data;
+    return map->maps[i].data;
 }
 
-void del_data(unsigned int ip)
+void del_data(Map *map, unsigned int ip)
 {
-    int i = find_index(ip);
+    int i = find_index(map, ip);
     if (i == -1) return;
 
-    kfree(map.maps[i].data->content);
-    kfree(map.maps[i].data);
+    kfree(map->maps[i].data->content);
+    kfree(map->maps[i].data);
 
-    for (; i < map.count - 1; ++i)
+    for (; i < map->count - 1; ++i)
     {
-        memcpy(map.maps + i, map.maps + i + 1, sizeof(struct _map_node));
+        memcpy(map->maps + i, map->maps + i + 1, sizeof(struct _map_node));
     }
-    map.maps[map.count].ip = 0;
-    map.maps[map.count].data = NULL;
-    map.count > 0 ? map.count-- : (map.count = 0);
+    map->maps[map->count].ip = 0;
+    map->maps[map->count].data = NULL;
+    map->count > 0 ? map->count-- : (map->count = 0);
 
-    if (map.count * 2 <= map.size)
+    if (map->count * 2 <= map->size)
     {
-        struct _map_node *t = map.maps;
-        map.maps = kcalloc(map.size == 1 ? 1 : map.size / 2, sizeof(struct _map_node), GFP_KERNEL);
-        memcpy(map.maps, t, sizeof(struct _map_node) * map.count);
-        map.size = map.size == 1 ? 1 : map.size / 2;
+        struct _map_node *t = map->maps;
+        map->maps = kcalloc(map->size == 1 ? 1 : map->size / 2, sizeof(struct _map_node), GFP_KERNEL);
+        memcpy(map->maps, t, sizeof(struct _map_node) * map->count);
+        map->size = map->size == 1 ? 1 : map->size / 2;
         kfree(t);
     }
 }
@@ -221,7 +221,7 @@ int save_to_file(const char *fname, Data *pdata)
     return pdata->size;
 }
 
-int load_from_file(const char *fname)
+int load_from_file(Map *map, const char *fname)
 {
     unsigned int p_ip;
     int ret = 0;
@@ -253,7 +253,7 @@ int load_from_file(const char *fname)
 
         pos += countInfoLen(cont + pos);
         p_size = countDataLen(cont + pos);
-        pdata = append_data(ntohl(p_ip), p_size);
+        pdata = append_data(map, ntohl(p_ip), p_size);
         count++;
         
         strcpyn(pdata->content, cont + pos, p_size);
@@ -270,24 +270,25 @@ void print_data(Data *pdata)
     printk(KERN_INFO "[%s][%d] %s\n", ip_str, pdata->size, pdata->content);
 }
 
-int print_all_datas(void)
+int print_all_datas(Map *map)
 {
     char ip_str[20];
     int i;
-    for (i = 0; i < map.count; ++i)
+    for (i = 0; i < map->count; ++i)
     {
-        ipnAddrToStr(ip_str, map.maps[i].data->ip);
-        printk(KERN_INFO "%d. [%s] %s\n", i + 1, ip_str, map.maps[i].data->content);
+        ipnAddrToStr(ip_str, map->maps[i].data->ip);
+        /* printk(KERN_INFO "%d. [%s] %s\n", i + 1, ip_str, map->maps[i].data->content); */
+        printk(KERN_INFO "%d. [%u] %s\n", i + 1, map->maps[i].ip, map->maps[i].data->content);
     }
     return i;
 }
 
-int save_all_datas(const char *fname)
+int save_all_datas(Map *map, const char *fname)
 {
     int i;
-    for (i = 0; i < map.count; ++i)
+    for (i = 0; i < map->count; ++i)
     {
-        save_to_file(fname, map.maps[i].data);
+        save_to_file(fname, map->maps[i].data);
     }
     return i;
 }

@@ -10,19 +10,19 @@ static struct file_operations fops = {
     .llseek = covert_dev_llseek,
 };
 
-static int covert_dev_open(struct inode *inode, struct file *file)
+int covert_dev_open(struct inode *inode, struct file *file)
 {
     return 0;
 }
 
-static int covert_dev_release(struct inode *inode, struct file *file)
+int covert_dev_release(struct inode *inode, struct file *file)
 {
     return 0;
 }
 
 loff_t covert_dev_llseek(struct file *file, loff_t offset, int where)
 {
-    read_pdata = find_data(offset);
+    read_pdata = find_data(&send_map, offset);
     if (!read_pdata)
     {
         return 0;
@@ -74,12 +74,12 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
         return 0;
     }
 
-    pdata = append_data(ip, size);
+    pdata = append_data(&send_map, ip, size);
     
     ret = raw_copy_from_user(pdata->content, buf + *offset, size);
     if (ret)
     {
-        del_data(ip);
+        del_data(&send_map, ip);
         return -1;
     }
     *offset += size;
