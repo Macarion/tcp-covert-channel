@@ -42,9 +42,6 @@ typedef struct _map
     struct _map_node *maps;
 } Map;
 
-static Map send_map;
-static Map recv_map;
-
 Data *_append(Map *map, unsigned int);
 
 void free_map(Map *map);

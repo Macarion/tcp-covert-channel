@@ -23,6 +23,9 @@
 
 #define __NET_DEVICE "eth0"
 
+Map send_map;
+Map recv_map;
+
 static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
     struct iphdr *iph = NULL;
