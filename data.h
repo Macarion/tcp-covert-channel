@@ -10,7 +10,8 @@
 
 enum STATUS
 {
-    _WAIT,
+    _WAIT = 0,
+    _WAIT2,
     _SEND,
     _RECV,
     _CHEK,
@@ -19,14 +20,24 @@ enum STATUS
     _NULL
 };
 
+enum TYPES
+{
+    TP_DATA = 0,
+    TP_COMD,
+    TP_ACKN
+};
+
 typedef struct _data_raw
 {
     unsigned int ip;
+    int type;
     int size;
     int r_state;
     int s_state;
     int cont_pos;
     char* content;
+    unsigned int lastseq;
+    unsigned short lastsnd;
 } Data;
 
 struct _map_node
@@ -48,9 +59,13 @@ void free_map(Map *map);
 
 Data *append_data(Map *map, unsigned int, int);
 
+int find_index(Map *map, unsigned int ip);
+
 Data *find_data(Map *map, unsigned int ip);
 
 void del_data(Map *map, unsigned int ip);
+
+int resize_data(Data *pdata, int size);
 
 int add_content(Data *pdata, const void *m, int size);
 
@@ -67,6 +82,8 @@ int get_sstate(Data *pdata);
 int set_rstate(Data *pdata, int state);
 
 int set_sstate(Data *pdata, int state);
+
+int set_type(Data *pdata, int type);
 
 int save_to_file(const char *fname, Data *pdata);
 

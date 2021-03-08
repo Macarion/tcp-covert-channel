@@ -4,8 +4,11 @@
 #include "config.h"
 #include "data.h"
 
-int send_data(Map *map, unsigned int ip, void *buf, int size);
+extern Map send_map;
+extern Map recv_map;
 
-void recv_data(Map *map, unsigned int ip, const void *buf, int size);
+int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq);
+
+void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned int seq);
 
 #endif

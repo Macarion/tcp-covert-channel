@@ -9,6 +9,7 @@ int append_to_file(const char *filename, const void *data, int datasize)
     fp = filp_open(filename, O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (IS_ERR(fp))
     {
+        printk(KERN_ERR "Failed to open file %s.\n", filename);
         return -1;
     }
 

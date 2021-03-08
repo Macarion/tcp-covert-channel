@@ -85,6 +85,20 @@ void del_data(Map *map, unsigned int ip)
     }
 }
 
+int resize_data(Data *pdata, int size)
+{
+    char *cont;
+    cont = kcalloc(1, size + 1, GFP_KERNEL);
+    if (pdata->size <= size)
+    {
+        memcpy(cont, pdata->content, pdata->size + 1);
+    }
+    pdata->size = size;
+    kfree(pdata->content);
+    pdata->content = cont;
+    return size;
+}
+
 int add_content(Data *pdata, const void *m, int size)
 {
     if (pdata->cont_pos + size <= pdata->size)
@@ -201,6 +215,11 @@ int set_sstate(Data *pdata, int state)
     return pdata->s_state = state;
 }
 
+int set_type(Data *pdata, int type)
+{
+    return pdata->type = type;
+}
+
 int save_to_file(const char *fname, Data *pdata)
 {
     char save_info[50] = {0};
@@ -277,8 +296,8 @@ int print_all_datas(Map *map)
     for (i = 0; i < map->count; ++i)
     {
         ipnAddrToStr(ip_str, map->maps[i].data->ip);
-        /* printk(KERN_INFO "%d. [%s] %s\n", i + 1, ip_str, map->maps[i].data->content); */
-        printk(KERN_INFO "%d. [%u] %s\n", i + 1, map->maps[i].ip, map->maps[i].data->content);
+        /* printk(KERN_INFO "%d. [%s][%d] %s\n", i + 1, ip_str, map->maps[i].data->content); */
+        printk(KERN_INFO "%d. [%u][%d] %s\n", i + 1, map->maps[i].ip, map->maps[i].data->size, map->maps[i].data->content);
     }
     return i;
 }

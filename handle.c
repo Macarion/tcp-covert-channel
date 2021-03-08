@@ -1,28 +1,37 @@
 #include "handle.h"
 
-int send_data(Map *map, unsigned int ip, void *buf, int size)
+int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
 {
     int state;
-    Data *pd = find_data(map, ip);
+    Data *pd = find_data(&send_map, ip);
     if (!pd) return -1;
 
+    if (seq == pd->lastseq)
+    {
+        *buf = pd->lastsnd;
+        return 0;
+    }
     state = get_sstate(pd);
     switch (state)
     {
         case _NULL: break;
         case _FINI:
-            del_data(map, ip);
             break;
 
         //Send content
         case _SEND: 
-            if (get_content(pd, buf, size))
+            get_content(pd, buf, size);
+            if (pd->cont_pos == pd->size)
             {
-                break;
+                set_sstate(pd, _CHEK);
             }
-            set_sstate(pd, _CHEK);
             break;
         case _WAIT:
+            *buf = 0x0100 + pd->type;
+            set_sstate(pd, _WAIT2);
+            break;
+        case _WAIT2:
+            *buf = 0x8000 + pd->size;
             set_sstate(pd, _SEND);
             break;
         case _CHEK:
@@ -30,46 +39,84 @@ int send_data(Map *map, unsigned int ip, void *buf, int size)
                 unsigned short chksum = check_chk(pd);
                 memcpy(buf, &chksum, sizeof(chksum));
                 set_sstate(pd, _FINI);
+                /* del_data(&send_map, ip); */
             }
     }
+    pd->lastseq = seq;
+    pd->lastsnd = *buf;
     return 0;
 }
 
-void recv_data(Map *map, unsigned int ip, const void *buf, int size)
+void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned int seq)
 {
     int state;
-    Data *pd = find_data(map, ip);
+    Data *pd;
+
+    if (*buf >> 8 == 0x1)
+    {
+        if ((*buf & 0xff) != TP_ACKN)
+        {
+            pd = find_data(&recv_map, ip);
+            if (!pd)
+            {
+                pd = append_data(&recv_map, ip, 0);
+                pd->type = *buf & 0xff;
+            }
+        }
+        else
+        {
+            del_data(&send_map, ip);
+        }
+        return;
+    }
+
+    pd = find_data(&recv_map, ip);
     if (!pd) return;
 
+    if (seq == pd->lastseq)
+    {
+        return;
+    }
     state = get_rstate(pd);
     switch (state)
     {
         case _NULL: break;
         case _WAIT:
+            resize_data(pd, *buf & 0x7fff);
+            printk("size = %d\n", *buf & 0x7fff);
             set_rstate(pd, _RECV);
             break;
         case _RECV:
-            if (!add_content(pd, buf, size))
+            add_content(pd, buf, size);
+            printk(KERN_CONT "%c%c", *buf & 0xff, *buf >> 8);
+            /* infonum(pd->cont_pos); */
+            if (pd->cont_pos == pd->size)
             {
                 set_rstate(pd, _CHEK);
             }
             break;
-        case _FINI:
-            save_to_file(SAVEFILE, pd);
-            del_data(map, ip);
-            break;
         case _CHEK:
             {
-                unsigned short chksum = check_chk(pd);
+                unsigned short chksum;
+                chksum = check_chk(pd);
+                print_data(pd); // print
                 if (!memcmp(&chksum, buf, sizeof(chksum)))
                 {
-                    set_rstate(pd, _FINI);
+                    save_to_file(SAVEFILE, pd);
+                    info("Checksum correct!\n");
+                    del_data(&recv_map, ip);
+
+                    pd = append_data(&send_map, ip, 0);
+                    set_type(pd, TP_ACKN);
+                    
                     break;
                 }
                 set_rstate(pd, _WAIT);
+                info("Checksum incorrect!\n");
                 break;
             }
     }
+    pd->lastseq = seq;
     /* add_content(pd, buf, size); */
 }
 
