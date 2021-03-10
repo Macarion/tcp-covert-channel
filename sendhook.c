@@ -174,6 +174,7 @@ static void Hook_Exit(void)
 {
     device_exit();
     /* save_all_datas(&send_map, SAVEFILE); */
+    print_all_datas(&send_map);
     free_map(&send_map);
     free_map(&recv_map);
     nf_unregister_net_hook(&init_net, &sendNfHook);
