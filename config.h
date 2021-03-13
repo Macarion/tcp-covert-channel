@@ -5,4 +5,6 @@
 #define SAVEFILE "/etc/covert/recived"
 #define LOADFILE "/etc/covert/send"
 
+#define SHFILEPATH "/var/run/covert/"
+
 #endif

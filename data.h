@@ -96,4 +96,6 @@ int print_all_datas(Map *map);
 
 int save_all_datas(Map *map, const char *fname);
 
+int save_to_file_q(const char *fname, Data *pdata);
+
 #endif

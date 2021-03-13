@@ -8,4 +8,6 @@
 
 int call_user_program(char *cmd, unsigned int ip);
 
+int call_user_file(char *fpath, unsigned int ip);
+
 #endif

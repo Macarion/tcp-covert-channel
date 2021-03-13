@@ -311,3 +311,11 @@ int save_all_datas(Map *map, const char *fname)
     }
     return i;
 }
+
+int save_to_file_q(const char *fname, Data *pdata)
+{
+    append_to_file(fname, pdata->content, pdata->size);
+
+    return pdata->size;
+}
+

