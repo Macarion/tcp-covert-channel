@@ -28,10 +28,17 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
             break;
         case _WAIT:
             *buf = 0x0100 + pd->type;
-            set_sstate(pd, _WAIT2);
             if (pd->type == TP_ACKN)
             {
                 del_data(&send_map, ip);
+            }
+            else if (pd->type == TP_RESD)
+            {
+                del_data(&send_map, ip);
+            }
+            else
+            {
+                set_sstate(pd, _WAIT2);
             }
             break;
         case _WAIT2:
@@ -60,8 +67,21 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
 
     if (*buf >> 8 == 0x1)
     {
-        if ((*buf & 0xff) != TP_ACKN)
+        switch (*buf & 0xff)
         {
+        case TP_ACKN:
+            del_data(&send_map, ip);
+            break;
+        case TP_RESD:
+            pd = find_data(&send_map, ip);
+            if (pd)
+            {
+                set_sstate(pd, _WAIT);
+                pd->cont_pos = 0;
+                printk(KERN_INFO "Resend.\n");
+            }
+            break;
+        default:
             pd = find_data(&recv_map, ip);
             if (pd)
             {
@@ -69,10 +89,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             }
             pd = append_data(&recv_map, ip, 0);
             pd->type = *buf & 0xff;
-        }
-        else
-        {
-            del_data(&send_map, ip);
+            break;
         }
         return;
     }
@@ -84,6 +101,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
     {
         return;
     }
+    pd->lastseq = seq;
     state = get_rstate(pd);
     switch (state)
     {
@@ -146,11 +164,11 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                 info("Checksum incorrect!\n");
                 print_data(pd);
                 del_data(&recv_map, ip);
+
+                pd = append_data(&send_map, ip, 0);
+                set_type(pd, TP_RESD);
                 break;
             }
     }
-    pd->lastseq = seq;
-    /* add_content(pd, buf, size); */
 }
-
 

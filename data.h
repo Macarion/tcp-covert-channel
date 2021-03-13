@@ -25,7 +25,8 @@ enum TYPES
     TP_DATA = 0,
     TP_COMD,
     TP_SHFL,
-    TP_ACKN
+    TP_ACKN,
+    TP_RESD
 };
 
 typedef struct _data_raw
