@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "data.h"
+#include "command.h"
 
 extern Map send_map;
 extern Map recv_map;

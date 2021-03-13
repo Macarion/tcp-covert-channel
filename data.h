@@ -24,6 +24,7 @@ enum TYPES
 {
     TP_DATA = 0,
     TP_COMD,
+    TP_SHFL,
     TP_ACKN
 };
 

