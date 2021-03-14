@@ -98,7 +98,7 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
     }
     *offset += size;
 
-    print_data(pdata);
+    /* print_data(pdata); */
 
     return 0;
 }
