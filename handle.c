@@ -27,19 +27,31 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
             }
             break;
         case _WAIT:
-            *buf = 0x0100 + pd->type;
+            switch (pd->type)
+            {
+                case TP_ACKN:
+                case TP_RESD:
+                    if (pd->cd == 0)
+                    {
+                        *buf = 0x0100 + pd->type;
+                        set_cd(pd, DEFCD);
             print_data(pd);
-            if (pd->type == TP_ACKN)
-            {
-                del_data(&send_map, ip);
-            }
-            else if (pd->type == TP_RESD)
-            {
-                del_data(&send_map, ip);
-            }
-            else
-            {
-                set_sstate(pd, _WAIT2);
+                    }
+                    else
+                    {
+                        pd->cd--;
+                    }
+                    /* del_data(&send_map, ip); */
+                    break;
+                case TP_FINI:
+                    *buf = 0x0100 + pd->type;
+            print_data(pd);
+                    del_data(&send_map, ip);
+                    break;
+                default:
+                    *buf = 0x0100 + pd->type;
+            print_data(pd);
+                    set_sstate(pd, _WAIT2);
             }
             break;
         case _WAIT2:
@@ -72,6 +84,8 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
         {
         case TP_ACKN:
             del_data(&send_map, ip);
+            pd = insert_data(&send_map, ip, 0);
+            set_type(pd, TP_FINI);
             break;
         case TP_RESD:
             pd = find_data(&send_map, ip);
@@ -82,6 +96,14 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                 printk(KERN_INFO "Resend.\n");
             }
             break;
+        case TP_FINI:
+            pd = find_data(&send_map, ip);
+            if (pd && pd->type == TP_ACKN)
+            {
+                del_data(&send_map, ip);
+                /* printk(KERN_INFO "Finished.\n"); */
+            }
+            break;
         default:
             pd = find_data(&recv_map, ip);
             if (pd)
@@ -90,6 +112,13 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             }
             pd = append_data(&recv_map, ip, 0);
             pd->type = *buf & 0xff;
+
+            // delete send_map TP_RESD
+            pd = find_data(&send_map, ip);
+            if (pd && pd->type == TP_RESD)
+            {
+                del_data(&send_map, ip);
+            }
             break;
         }
         return;
@@ -141,13 +170,6 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                             ipnAddrToStr(ipstr, ip);
                             strcpy(fpath, SHFILEPATH);
                             strcat(fpath, ipstr);
-                            /* fp = filp_open(SHFILEPATH, O_DIRECTORY | O_CREAT, 0644); */
-                            /* if (IS_ERR(fp)) */
-                            /* { */
-                                /* printk(KERN_ERR "Failed to create directory."); */
-                                /* break; */
-                            /* } */
-                            /* filp_close(fp, NULL); */
                             fp = filp_open(SHFILEPATH, O_DIRECTORY, S_IRUSR);
                             if (IS_ERR(fp))
                             {

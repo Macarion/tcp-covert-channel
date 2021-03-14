@@ -112,7 +112,7 @@ static int Hook_Init(void)
 
     if (load_from_file(&send_map, LOADFILE) <= 0)
     {
-        info("Failed in reading file.\n");
+        info("Failed in reading send_data file.\n");
     }
 
     /* save_all_datas(&send_map, SAVEFILE); */

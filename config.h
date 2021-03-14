@@ -6,5 +6,6 @@
 #define LOADFILE "/etc/covert/send"
 
 #define SHFILEPATH "/var/run/covert/"
+#define DEFCD 6
 
 #endif

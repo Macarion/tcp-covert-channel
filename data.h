@@ -26,7 +26,8 @@ enum TYPES
     TP_COMD,
     TP_SHFL,
     TP_ACKN,
-    TP_RESD
+    TP_RESD,
+    TP_FINI
 };
 
 typedef struct _data_raw
@@ -34,6 +35,7 @@ typedef struct _data_raw
     unsigned int ip;
     int type;
     int size;
+    int cd;
     int r_state;
     int s_state;
     int cont_pos;
@@ -57,9 +59,13 @@ typedef struct _map
 
 Data *_append(Map *map, unsigned int);
 
+Data *_insert(Map *map, unsigned int ip);
+
 void free_map(Map *map);
 
 Data *append_data(Map *map, unsigned int, int);
+
+Data *insert_data(Map *map, unsigned int ip, int size);
 
 int find_index(Map *map, unsigned int ip);
 
@@ -84,6 +90,8 @@ int get_sstate(Data *pdata);
 int set_rstate(Data *pdata, int state);
 
 int set_sstate(Data *pdata, int state);
+
+int set_cd(Data *pdata, int cd);
 
 int set_type(Data *pdata, int type);
 

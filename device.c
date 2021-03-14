@@ -22,6 +22,11 @@ int covert_dev_release(struct inode *inode, struct file *file)
 
 loff_t covert_dev_llseek(struct file *file, loff_t offset, int where)
 {
+    if (offset == 0)
+    {
+        print_all_datas(&send_map);
+        return 0;
+    }
     read_pdata = find_data(&send_map, offset);
     if (!read_pdata)
     {
