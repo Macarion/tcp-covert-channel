@@ -345,6 +345,7 @@ int print_all_datas(Map *map)
         printk(KERN_INFO "Error: count >= size.\n");
         return -1;
     }
+    printk(KERN_INFO "count: %d, size: %d\n", map->count, map->size);
     for (i = 0; i < map->count && map->maps[i].ip; ++i)
     {
         ipnAddrToStr(ip_str, map->maps[i].data->ip);
