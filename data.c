@@ -117,7 +117,7 @@ void del_data(Map *map, unsigned int ip)
     map->maps[map->count].data = NULL;
     map->count > 0 ? map->count-- : (map->count = 0);
 
-    /* if (map->count * 2 <= map->size) */
+    /* if (map->count * 2 <= map->size && map->size > 1) */
     /* { */
         /* struct _map_node *t = map->maps; */
         /* map->maps = kcalloc(map->size == 1 ? 1 : map->size / 2, sizeof(struct _map_node), GFP_KERNEL); */
