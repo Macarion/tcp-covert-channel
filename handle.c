@@ -16,8 +16,16 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
     {
         case _NULL: return 0;
         case _FINI:
-            return 0;
-
+            if (pd->cd == 0)
+            {
+                set_sstate(pd, _WAIT);
+                pd->cont_pos = 0;
+            }
+            else
+            {
+                pd->cd--;
+            }
+            break;
         //Send content
         case _SEND: 
             get_content(pd, buf, size);
@@ -35,7 +43,7 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                     {
                         *buf = 0x0100 + pd->type;
                         set_cd(pd, DEFCD);
-            print_data(pd);
+                        print_data(pd);
                     }
                     else
                     {
@@ -45,12 +53,12 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                     break;
                 case TP_FINI:
                     *buf = 0x0100 + pd->type;
-            print_data(pd);
+                    print_data(pd);
                     del_data(&send_map, ip);
                     break;
                 default:
                     *buf = 0x0100 + pd->type;
-            print_data(pd);
+                    print_data(pd);
                     set_sstate(pd, _WAIT2);
             }
             break;
@@ -62,6 +70,7 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
             {
                 unsigned short chksum = check_chk(pd);
                 memcpy(buf, &chksum, sizeof(chksum));
+                set_cd(pd, DEFCD);
                 set_sstate(pd, _FINI);
                 /* del_data(&send_map, ip); */
                 break;
@@ -83,13 +92,17 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
         switch (*buf & 0xff)
         {
         case TP_ACKN:
-            del_data(&send_map, ip);
+            pd = find_data(&send_map, ip);
+            if (pd && pd->s_state == _FINI)
+            {
+                del_data(&send_map, ip);
+            }
             pd = insert_data(&send_map, ip, 0);
             set_type(pd, TP_FINI);
             break;
         case TP_RESD:
             pd = find_data(&send_map, ip);
-            if (pd)
+            if (pd && pd->s_state == _FINI)
             {
                 set_sstate(pd, _WAIT);
                 pd->cont_pos = 0;
@@ -166,26 +179,9 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                         {
                             char fpath[40];
                             char ipstr[20];
-                            struct file *fp;
                             ipnAddrToStr(ipstr, ip);
                             strcpy(fpath, SHFILEPATH);
                             strcat(fpath, ipstr);
-                            fp = filp_open(SHFILEPATH, O_DIRECTORY, S_IRUSR);
-                            if (IS_ERR(fp))
-                            {
-                                char *argv[] = {"/bin/mkdir", SHFILEPATH, NULL};
-                                static char *envp[] = {
-                                    "HOME=/",
-                                    "TERM=linux",
-                                    "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL 
-                                };
-
-                                call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
-                            }
-                            else
-                            {
-                                filp_close(fp, NULL);
-                            }
                             save_to_file_q(fpath, pd);
                             call_user_file(fpath, ip);
                             break;

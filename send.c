@@ -19,9 +19,9 @@
 #include "handle.h"
 #include "device.h"
 
-/* MODULE_LICENSE("Dual BSD/GPL"); */
+MODULE_LICENSE("Dual BSD/GPL");
 
-#define __NET_DEVICE "wlan0"
+/* #define __NET_DEVICE "wlan0" */
 
 Map send_map;
 Map recv_map;
@@ -103,14 +103,26 @@ struct nf_hook_ops recvNfHook =
 
 static int Hook_Init(void)
 {
-    /* const char message[] = "apt provides a high-level commandline interface for the package management system."; */
-    /* unsigned int ip = 67217600; */
-    /* int n = 0; */
     int ret = 0;
-    /* unsigned short buf; */
-    /* int size; */
+    struct file *fp;
 
-    if (load_from_file(&send_map, LOADFILE) <= 0)
+    fp = filp_open(SHFILEPATH, O_DIRECTORY, S_IRUSR);
+    if (IS_ERR(fp))
+    {
+        char *argv[] = {"/bin/mkdir", SHFILEPATH, NULL};
+        static char *envp[] = {
+            "HOME=/",
+            "TERM=linux",
+            "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL 
+        };
+        call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
+    }
+    else
+    {
+        filp_close(fp, NULL);
+    }
+
+    if (load_from_file(&send_map, LOADFILE) < 0)
     {
         info("Failed in reading send_data file.\n");
     }
@@ -120,34 +132,6 @@ static int Hook_Init(void)
     device_init();
 
     /* print_all_datas(&recv_map); */
-
-    /* { */
-        /* int i; */
-        /* buf = 0x0100; */
-        /* recv_data(ip, &buf, 2); */
-        /* buf = size = strlen(message); */
-        /* recv_data(ip, &buf, 2); */
-        /* for (i = 0; i < size; i += 2) */
-        /* { */
-            /* buf = (message[i + 1] << 8) + message[i]; */
-            /* recv_data(ip, &buf, 2); */
-        /* } */
-        /* buf = check_chk(find_data(&send_map, ip)); */
-        /* recv_data(ip, &buf, 2); */
-    /* } */
-
-    /* print_all_datas(&recv_map); */
-    
-    /* print_all_datas(&send_map); */
-    /* while (find_data(&send_map, ip)) */
-    /* { */
-        /* send_data(ip, &buf, 2); */
-        /* printk(KERN_CONT "%c%c", buf & 0xff, buf >> 8); */
-        /* printk(KERN_INFO "%c%c", buf & 0xff, buf >> 8); */
-        /* n++; */
-    /* } */
-    /* printk(KERN_CONT "\n"); */
-    /* printk(KERN_INFO "n = %d\n", n); */
 
     /* return -1; */
 
@@ -173,7 +157,6 @@ static int Hook_Init(void)
 static void Hook_Exit(void)
 {
     device_exit();
-    /* save_all_datas(&send_map, SAVEFILE); */
     print_all_datas(&send_map);
     free_map(&send_map);
     free_map(&recv_map);

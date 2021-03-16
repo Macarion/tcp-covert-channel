@@ -4,7 +4,7 @@ int call_user_program(char *cmd, unsigned int ip)
 {
     char ipstr[20] = {0};
     ipnAddrToStr(ipstr, ip);
-    char *argv[] = {"/home/pi/program/user/main", "-R", "-i", ipstr, "-c", cmd, NULL};
+    char *argv[] = {USERPROGRAM, "-R", "-i", ipstr, "-c", cmd, NULL};
     static char *envp[] = {
         "HOME=/",
         "TERM=linux",
@@ -19,7 +19,7 @@ int call_user_file(char *fpath, unsigned int ip)
 {
     char ipstr[20] = {0};
     ipnAddrToStr(ipstr, ip);
-    char *argv[] = {"/home/pi/program/user/main", "-R", "-i", ipstr, "-s", fpath, NULL};
+    char *argv[] = {USERPROGRAM, "-R", "-i", ipstr, "-s", fpath, NULL};
     static char *envp[] = {
         "HOME=/",
         "TERM=linux",

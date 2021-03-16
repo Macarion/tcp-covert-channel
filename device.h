@@ -7,16 +7,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include "data.h"
-
-#define DEVNAME "covert"
-static int major;
-static int minor;
-static struct class *cls;
-static dev_t devnum;
-static Data *read_pdata;
-
-extern Map send_map;
-extern Map recv_map;
+#include "config.h"
 
 enum METHOD {
     M_READ,

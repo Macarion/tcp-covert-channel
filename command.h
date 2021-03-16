@@ -5,6 +5,7 @@
 #include <linux/init.h>
 #include <linux/kmod.h>
 #include "functions.h"
+#include "config.h"
 
 int call_user_program(char *cmd, unsigned int ip);
 

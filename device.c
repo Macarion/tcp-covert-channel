@@ -1,6 +1,15 @@
 #include "device.h"
 
+static int major;
+static int minor;
+static struct class *cls;
+static dev_t devnum;
+static Data *read_pdata;
 static struct cdev covert_dev;
+
+extern Map send_map;
+extern Map recv_map;
+
 static struct file_operations fops = {
     .owner = THIS_MODULE,
     .open = covert_dev_open,
@@ -110,7 +119,6 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
 
 int device_init(void)
 {
-    int i;
     int ret;
     ret = alloc_chrdev_region(&devnum, 0, 1, DEVNAME);
     if (!ret) {
