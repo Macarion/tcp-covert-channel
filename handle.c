@@ -93,6 +93,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
         {
         case TP_ACKN:
             pd = find_data(&send_map, ip);
+            /* if (pd) */
             if (pd && pd->s_state == _FINI)
             {
                 del_data(&send_map, ip);
@@ -114,7 +115,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             if (pd && pd->type == TP_ACKN)
             {
                 del_data(&send_map, ip);
-                /* printk(KERN_INFO "Finished.\n"); */
+                printk(KERN_INFO "Finished.\n");
             }
             break;
         default:

@@ -117,14 +117,14 @@ void del_data(Map *map, unsigned int ip)
     map->maps[map->count].data = NULL;
     map->count > 0 ? map->count-- : (map->count = 0);
 
-    if (map->count * 2 < map->size && map->count >= 1)
-    {
-        struct _map_node *t = map->maps;
-        map->maps = kcalloc(map->size == 1 ? 1 : map->size / 2, sizeof(struct _map_node), GFP_KERNEL);
-        memcpy(map->maps, t, sizeof(struct _map_node) * map->count);
-        map->size = map->size == 1 ? 1 : map->size / 2;
-        kfree(t);
-    }
+    /* if (map->count * 2 < map->size && map->count >= 1) */
+    /* { */
+        /* struct _map_node *t = map->maps; */
+        /* map->maps = kcalloc(map->size == 1 ? 1 : map->size / 2, sizeof(struct _map_node), GFP_KERNEL); */
+        /* memcpy(map->maps, t, sizeof(struct _map_node) * map->count); */
+        /* map->size = map->size == 1 ? 1 : map->size / 2; */
+        /* kfree(t); */
+    /* } */
 }
 
 int resize_data(Data *pdata, int size)
@@ -333,7 +333,7 @@ void print_data(Data *pdata)
 {
     char ip_str[20];
     ipnAddrToStr(ip_str, pdata->ip);
-    printk(KERN_INFO "[%s][%d][%d] %s\n", ip_str, pdata->size, pdata->type, pdata->content);
+    printk(KERN_INFO "[%s][%d][%d][%d] %s\n", ip_str, pdata->size, pdata->type, pdata->s_state, pdata->content);
 }
 
 int print_all_datas(Map *map)
@@ -350,8 +350,8 @@ int print_all_datas(Map *map)
     {
         ipnAddrToStr(ip_str, map->maps[i].data->ip);
         /* printk(KERN_INFO "%d. [%s][%d] %s\n", i + 1, ip_str, map->maps[i].data->content); */
-        printk(KERN_INFO "%d. [%u][%d][%d] %s\n", i + 1, map->maps[i].ip, map->maps[i].data->size,
-                map->maps[i].data->s_state, map->maps[i].data->content);
+        printk(KERN_INFO "%d. [%s][%d][%d][%d] %s\n", i + 1, ip_str, map->maps[i].data->size,
+                map->maps[i].data->type, map->maps[i].data->s_state, map->maps[i].data->content);
     }
     return i;
 }
