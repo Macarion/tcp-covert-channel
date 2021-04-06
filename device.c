@@ -88,7 +88,6 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
         return -1;
     }
     *offset += sizeof(int);
-    /* printk(KERN_INFO "ip: %u, size: %d\n", ip, size); */
 
     if (sizeof(unsigned int) + sizeof(int) * 2 + size > count)
     {
@@ -101,8 +100,6 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
         return -1;
     }
     set_type(pdata, type);
-    /* printk(KERN_INFO "pdata = %p\n", pdata); */
-    /* printk(KERN_INFO "&map = %p, map.count = %d\n", &send_map, send_map.count); */
     
     ret = raw_copy_from_user(pdata->content, buf + *offset, size);
     if (ret)
@@ -111,8 +108,6 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
         return -1;
     }
     *offset += size;
-
-    /* print_data(pdata); */
 
     return 0;
 }

@@ -26,7 +26,6 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                 pd->cd--;
             }
             break;
-        //Send content
         case _SEND: 
             get_content(pd, buf, size);
             if (pd->cont_pos == pd->size)
@@ -49,7 +48,6 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                     {
                         pd->cd--;
                     }
-                    /* del_data(&send_map, ip); */
                     break;
                 case TP_FINI:
                     *buf = 0x0100 + pd->type;
@@ -72,7 +70,6 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                 memcpy(buf, &chksum, sizeof(chksum));
                 set_cd(pd, DEFCD);
                 set_sstate(pd, _FINI);
-                /* del_data(&send_map, ip); */
                 break;
             }
     }
@@ -127,7 +124,6 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             pd = append_data(&recv_map, ip, 0);
             pd->type = *buf & 0xff;
 
-            // delete send_map TP_RESD
             pd = find_data(&send_map, ip);
             if (pd && pd->type == TP_RESD)
             {
@@ -157,7 +153,6 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             break;
         case _RECV:
             add_content(pd, buf, size);
-            /* printk(KERN_CONT "%c%c", *buf & 0xff, *buf >> 8); */
             if (pd->cont_pos == pd->size)
             {
                 set_rstate(pd, _CHEK);

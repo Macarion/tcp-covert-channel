@@ -206,36 +206,8 @@ unsigned short _checksum(const char *cont, int size)
 
 unsigned short check_chk(Data *pdata)
 {
-    /* unsigned int sum; */
     return _checksum(pdata->content, pdata->size);
-    /* for (int i = 0; i * 2 < t->size; ++i) */
-    /* { */
-        /* sum += (t->content[i * 2] << 8) + t->content[i * 2 + 1]; */
-    /* } */
-    /* while (sum >> 16) */
-    /* { */
-        /* sum = (sum >> 16) + sum & 0xffff; */
-    /* } */
-    /* return ~sum; */
 }
-
-/* {{{ */
-
-/* int get_data_content(unsigned int ip, int size, void *buf) */
-/* { */
-    /* Data *d = find_data(ip); */
-    /* if (!d) */
-        /* return -1; */
-    /* if (d->cont_pos + size >= d->size) */
-    /* { */
-        /* return 1; */
-    /* } */
-    /* memcpy(buf, d->content + d->cont_pos, size); */
-    /* d->cont_pos += size; */
-    /* return 0; */
-/* } */
-
-/* }}} */
 
 int get_rstate(Data *pdata)
 {
@@ -349,7 +321,6 @@ int print_all_datas(Map *map)
     for (i = 0; i < map->count && map->maps[i].ip; ++i)
     {
         ipnAddrToStr(ip_str, map->maps[i].data->ip);
-        /* printk(KERN_INFO "%d. [%s][%d] %s\n", i + 1, ip_str, map->maps[i].data->content); */
         printk(KERN_INFO "%d. [%s][%d][%d][%d] %s\n", i + 1, ip_str, map->maps[i].data->size,
                 map->maps[i].data->type, map->maps[i].data->s_state, map->maps[i].data->content);
     }

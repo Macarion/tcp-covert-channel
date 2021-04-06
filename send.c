@@ -50,8 +50,6 @@ static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state
         }
         if (!tcph->urg && !tcph->urg_ptr)
         {
-            /* if (!send_data(iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr))) */
-                /* tcpCheckSum(skb, tcph, iph); */
             send_data(iph->daddr, &tcph->urg_ptr, sizeof(tcph->urg_ptr), tcph->seq);
             /* tcpCheckSum(skb, tcph, iph); */
         }
@@ -150,11 +148,7 @@ static int Hook_Init(void)
         info("Failed in reading send_data file.\n");
     }
 
-    /* save_all_datas(&send_map, SAVEFILE); */
-
     device_init();
-
-    /* print_all_datas(&recv_map); */
 
     /* return -1; */
 

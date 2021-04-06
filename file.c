@@ -9,7 +9,7 @@ int append_to_file(const char *filename, const void *data, int datasize)
     fp = filp_open(filename, O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (IS_ERR(fp))
     {
-        printk(KERN_ERR "Failed to open file %s.\n", filename);
+        printk(KERN_ERR "Failed to open file %s\n")
         return -1;
     }
 
@@ -52,23 +52,6 @@ char* get_file_content(const char* filename, char* digest, int size)
     filp_close(fp, NULL);
     return digest;
 }
-
-/* int load_from_file(const char *fname) */
-/* { */
-    /* int cont_size = get_file_length(fname); */
-    /* if (cont_size++ == -1) */
-        /* return -1; */
-    /* char *cont = kmalloc(cont_size * sizeof(char), GFP_KERNEL); */
-    /* if (!cont) */
-        /* return -1; */
-
-    /* if (!get_file_content(fname, cont, cont_size)) */
-        /* return -1; */
-
-    /* kfree(cont); */
-    // /* sscanf(cont, "[%d.%d.%d.%d][%s]%s", ); */
-    /* return 0; // */
-/* } */
 
 char* get_file_content_ptr(const char* filename)
 {
