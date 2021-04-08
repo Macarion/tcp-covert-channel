@@ -1,5 +1,4 @@
-obj-m :=
-obj-m += covert.o
+obj-m := covert.o
 
 ccflags-y += "-fno-stack-protector"
 # ccflags-y += "--warn-no-unused-variable"
