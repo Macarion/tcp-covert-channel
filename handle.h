@@ -5,8 +5,8 @@
 #include "data.h"
 #include "command.h"
 
-extern Map send_map;
-extern Map recv_map;
+extern LinkList send_map;
+extern LinkList recv_map;
 
 int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq);
 

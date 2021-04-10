@@ -7,8 +7,8 @@ static dev_t devnum;
 static Data *read_pdata;
 static struct cdev covert_dev;
 
-extern Map send_map;
-extern Map recv_map;
+extern LinkList send_map;
+extern LinkList recv_map;
 
 static struct file_operations fops = {
     .owner = THIS_MODULE,
@@ -33,10 +33,10 @@ loff_t covert_dev_llseek(struct file *file, loff_t offset, int where)
 {
     if (offset == 0)
     {
-        print_all_datas(&send_map);
+        print_all_datas(send_map);
         return 0;
     }
-    read_pdata = find_data(&send_map, offset);
+    read_pdata = find_data(send_map, offset);
     if (!read_pdata)
     {
         return 0;
@@ -94,7 +94,7 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
         return 0;
     }
 
-    pdata = append_data(&send_map, ip, size);
+    pdata = append_data(send_map, ip, size);
     if (!pdata)
     {
         return -1;
@@ -104,10 +104,11 @@ ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count
     ret = raw_copy_from_user(pdata->content, buf + *offset, size);
     if (ret)
     {
-        del_data(&send_map, ip);
+        delete_data(send_map, ip);
         return -1;
     }
     *offset += size;
+    pdata->content[size] = '\0';
 
     return 0;
 }

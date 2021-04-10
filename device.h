@@ -25,6 +25,7 @@ ssize_t covert_dev_read(struct file *file, char __user *buf, size_t count, loff_
 ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count, loff_t *offset);
 
 int device_init(void);
+
 void device_exit(void);
 
 #endif

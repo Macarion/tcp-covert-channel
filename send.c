@@ -23,8 +23,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 /* #define __NET_DEVICE "wlan0" */
 
-Map send_map;
-Map recv_map;
+LinkList send_map;
+LinkList recv_map;
 
 static uint sendHook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
@@ -109,6 +109,9 @@ static int Hook_Init(void)
     char *fcont;
     char inter[32];
 
+    InitList(&send_map);
+    InitList(&recv_map);
+
     if (!(fcont = get_file_content_ptr(CONFIGFILE)))
         return -1;
     sscanf(fcont, "%s", inter);
@@ -143,7 +146,7 @@ static int Hook_Init(void)
         filp_close(fp, NULL);
     }
 
-    if (load_from_file(&send_map, LOADFILE) < 0)
+    if (load_from_file(send_map, LOADFILE) < 0)
     {
         info("Failed in reading send_data file.\n");
     }
@@ -174,9 +177,9 @@ static int Hook_Init(void)
 static void Hook_Exit(void)
 {
     device_exit();
-    print_all_datas(&send_map);
-    free_map(&send_map);
-    free_map(&recv_map);
+    print_all_datas(send_map);
+    destory_all(&send_map);
+    destory_all(&recv_map);
     nf_unregister_net_hook(&init_net, &sendNfHook);
     nf_unregister_net_hook(&init_net, &recvNfHook);
     printk(KERN_INFO "SEND NET_HOOK STOPPED!\n");

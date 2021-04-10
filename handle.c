@@ -3,7 +3,7 @@
 int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
 {
     int state;
-    Data *pd = find_data(&send_map, ip);
+    Data *pd = find_data(send_map, ip);
     if (!pd) return -1;
 
     if (seq == pd->lastseq)
@@ -52,7 +52,7 @@ int send_data(unsigned int ip, unsigned short *buf, int size, unsigned int seq)
                 case TP_FINI:
                     *buf = 0x0100 + pd->type;
                     print_data(pd);
-                    del_data(&send_map, ip);
+                    delete_data(send_map, ip);
                     break;
                 default:
                     *buf = 0x0100 + pd->type;
@@ -89,17 +89,17 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
         switch (*buf & 0xff)
         {
         case TP_ACKN:
-            pd = find_data(&send_map, ip);
+            pd = find_data(send_map, ip);
             /* if (pd) */
             if (pd && pd->s_state == _FINI)
             {
-                del_data(&send_map, ip);
+                delete_data(send_map, ip);
             }
-            pd = insert_data(&send_map, ip, 0);
+            pd = insert_data(send_map, ip, 0);
             set_type(pd, TP_FINI);
             break;
         case TP_RESD:
-            pd = find_data(&send_map, ip);
+            pd = find_data(send_map, ip);
             if (pd && pd->s_state == _FINI)
             {
                 set_sstate(pd, _WAIT);
@@ -108,33 +108,33 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             }
             break;
         case TP_FINI:
-            pd = find_data(&send_map, ip);
+            pd = find_data(send_map, ip);
             if (pd && pd->type == TP_ACKN)
             {
-                del_data(&send_map, ip);
+                delete_data(send_map, ip);
                 printk(KERN_INFO "Finished.\n");
             }
             break;
         default:
-            pd = find_data(&recv_map, ip);
+            pd = find_data(recv_map, ip);
             if (pd)
             {
-                del_data(&recv_map, ip);
+                delete_data(recv_map, ip);
             }
-            pd = append_data(&recv_map, ip, 0);
+            pd = append_data(recv_map, ip, 0);
             pd->type = *buf & 0xff;
 
-            pd = find_data(&send_map, ip);
+            pd = find_data(send_map, ip);
             if (pd && pd->type == TP_RESD)
             {
-                del_data(&send_map, ip);
+                delete_data(send_map, ip);
             }
             break;
         }
         return;
     }
 
-    pd = find_data(&recv_map, ip);
+    pd = find_data(recv_map, ip);
     if (!pd) return;
 
     if (seq == pd->lastseq)
@@ -185,18 +185,18 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
                         case TP_DATA: save_to_file(SAVEFILE, pd); break;
                     }
                     
-                    del_data(&recv_map, ip);
+                    delete_data(recv_map, ip);
 
-                    pd = append_data(&send_map, ip, 0);
+                    pd = append_data(send_map, ip, 0);
                     set_type(pd, TP_ACKN);
                     
                     break;
                 }
                 info("Checksum incorrect!\n");
                 print_data(pd);
-                del_data(&recv_map, ip);
+                delete_data(recv_map, ip);
 
-                pd = append_data(&send_map, ip, 0);
+                pd = append_data(send_map, ip, 0);
                 set_type(pd, TP_RESD);
                 break;
             }

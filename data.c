@@ -1,189 +1,164 @@
 #include "data.h"
 
-Data *_append(Map *map, unsigned int ip)
+static unsigned __match_ip;
+static unsigned __init_ip;
+static int __init_size;
+static const char *__fname;
+
+static bool __match_node(Node *p)
 {
-    Data *t;
-    if (map->count == map->size)
-    {
-        struct _map_node *t = map->maps;
-        map->maps = kcalloc(map->size == 0 ? 1 : map->size * 2, sizeof(struct _map_node), GFP_KERNEL);
-        memcpy(map->maps, t, sizeof(struct _map_node) * map->size);
-        map->size = map->size == 0 ? 1 : map->size * 2;
-        kfree(t);
-    }
-    t = kcalloc(1, sizeof(Data), GFP_KERNEL);
-    map->maps[map->count].ip = t->ip = ip;
-    map->maps[map->count].data = t;
-    map->count++;
-    return t;
+    return p->ip == __match_ip;
 }
 
-Data *_insert(Map *map, unsigned int ip)
+static void __init_node(Node *p)
 {
-    int locate;
-    Data *t;
-    if (map->count == map->size)
-    {
-        struct _map_node *t = map->maps;
-        map->maps = kcalloc(map->size == 0 ? 1 : map->size * 2, sizeof(struct _map_node), GFP_KERNEL);
-        memcpy(map->maps, t, sizeof(struct _map_node) * map->size);
-        map->size = map->size == 0 ? 1 : map->size * 2;
-        kfree(t);
-    }
-    locate = find_index(map, ip);
-    t = kcalloc(1, sizeof(Data), GFP_KERNEL);
-    if (locate == -1)
-    {
-        map->maps[map->count].ip = t->ip = ip;
-        map->maps[map->count].data = t;
-    }
-    else
-    {
-        int i;
-        for (i = map->count - 1; i >= locate; --i)
-        {
-            memcpy(map->maps + i + 1, map->maps + i, sizeof(struct _map_node));
-        }
-        map->maps[locate].ip = t->ip = ip;
-        map->maps[locate].data = t;
-    }
-    map->count++;
-    return t;
+    p->ip = __init_ip;
 }
 
-void free_map(Map *map)
+static void __init_data(Data *p)
 {
-    int i;
-    for (i = 0; i < map->count; ++i)
+    p->ip = __init_ip;
+    p->size = __init_size;
+    if (__init_size)
     {
-        kfree(map->maps[i].data->content);
-        kfree(map->maps[i].data);
+        p->content = (char *)kmalloc((__init_size + 1) * sizeof(char), GFP_KERNEL);
     }
-    kfree(map->maps);
 }
 
-Data *append_data(Map *map, unsigned int ip, int size)
+static void __destory_data(Data *p)
 {
-    Data *d = _append(map, ip);
-    d->size = size;
-    d->content = kcalloc(1, size + 1, GFP_KERNEL);
-    d->s_state = d->r_state = _WAIT;
-    return d;
+    kfree(p->content);
 }
 
-Data *insert_data(Map *map, unsigned int ip, int size)
+static void __destory_queue(LinkQueue *Q)
 {
-    Data *d = _insert(map, ip);
-    d->size = size;
-    d->content = kcalloc(1, size + 1, GFP_KERNEL);
-    d->s_state = d->r_state = _WAIT;
-    return d;
+    DestoryQueue(Q, __destory_data);
 }
 
-int find_index(Map *map, unsigned int ip)
+static void __destory_node(Node *p)
 {
-    int i;
-    for (i = 0; i < map->count; ++i)
-    {
-        if (map->maps[i].ip == ip)
-        {
-            return i;
-        }
-    }
-    return -1;
+    __destory_queue(&p->queue);
 }
 
-Data *find_data(Map *map, unsigned int ip)
+Node* append_ip_node(LinkList L, unsigned int ip)
 {
-    int i = find_index(map, ip);
-    if (i == -1)
+    __init_ip = ip;
+    return AppendNode(L, __init_node);
+}
+
+void delete_ip_node(LinkList L, unsigned int ip)
+{
+    __match_ip = ip;
+    DeleteNode(L, __match_node, __destory_node);
+}
+
+Data* append_data(LinkList L, unsigned int ip, int size)
+{
+    __match_ip = __init_ip = ip;
+    __init_size = size;
+    Node *p = FindNode(L, __match_node);
+    if (!p && !(p = append_ip_node(L, ip)))
         return NULL;
-    return map->maps[i].data;
+    if (!p->queue && !InitQueue(&p->queue))
+        return NULL;
+    return Push(p->queue, __init_data);
 }
 
-void del_data(Map *map, unsigned int ip)
+Data* insert_data(LinkList L, unsigned int ip, int size)
 {
-    int i = find_index(map, ip);
-    if (i == -1) return;
-
-    kfree(map->maps[i].data->content);
-    kfree(map->maps[i].data);
-
-    for (; i < map->count - 1; ++i)
-    {
-        memcpy(map->maps + i, map->maps + i + 1, sizeof(struct _map_node));
-    }
-    map->maps[map->count].ip = 0;
-    map->maps[map->count].data = NULL;
-    map->count > 0 ? map->count-- : (map->count = 0);
-
-    /* if (map->count * 2 < map->size && map->count >= 1) */
-    /* { */
-        /* struct _map_node *t = map->maps; */
-        /* map->maps = kcalloc(map->size == 1 ? 1 : map->size / 2, sizeof(struct _map_node), GFP_KERNEL); */
-        /* memcpy(map->maps, t, sizeof(struct _map_node) * map->count); */
-        /* map->size = map->size == 1 ? 1 : map->size / 2; */
-        /* kfree(t); */
-    /* } */
+    __match_ip = __init_ip = ip;
+    __init_size = size;
+    Node *p = FindNode(L, __match_node);
+    if (!p && !(p = append_ip_node(L, ip)))
+        return NULL;
+    if (!p->queue && !InitQueue(&p->queue))
+        return NULL;
+    return Insert(p->queue, __init_data);
 }
 
-int resize_data(Data *pdata, int size)
+Data* find_data(LinkList L, unsigned int ip)
+{
+    __match_ip = ip;
+    Node *p = FindNode(L, __match_node);
+    if (!p)
+        return NULL;
+    return GetHead(p->queue);
+}
+
+void delete_data(LinkList L, unsigned int ip)
+{
+    __match_ip = ip;
+    Node *p = FindNode(L, __match_node);
+    if (!p)
+        return;
+    Pop(p->queue, __destory_data);
+    if (QueueEmpty(p->queue))
+    {
+        DeleteNode(L, __match_node, __destory_node);
+    }
+}
+
+void destory_all(LinkList *L)
+{
+    DestroyList(L, __destory_node);
+}
+
+int resize_data(Data *p, int size)
 {
     char *cont;
-    cont = kcalloc(1, size + 1, GFP_KERNEL);
-    if (pdata->size <= size)
+    if (!p->size)
     {
-        memcpy(cont, pdata->content, pdata->size + 1);
+        p->content = (char *)kmalloc(size + 1, GFP_KERNEL);
+        p->size = size;
     }
-    pdata->size = size;
-    kfree(pdata->content);
-    pdata->content = cont;
+    if (p->size < size)
+    {
+        cont = kmalloc(size + 1, GFP_KERNEL);
+        memcpy(cont, p->content, p->size + 1);
+        kfree(p->content);
+        p->size = size;
+        p->content = cont;
+    }
+    return p->size;
+}
+
+int add_content(Data *p, const void *m, int size)
+{
+    if (p->cont_pos + size <= p->size)
+    {
+        memcpy(p->content + p->cont_pos, m, size);
+        p->cont_pos += size;
+        return size;
+    }
+    if (p->cont_pos == p->size)
+    {
+        return 0;
+    }
+    size = p->size - p->cont_pos;
+    memcpy(p->content + p->cont_pos, m, size);
+    p->cont_pos += size;
     return size;
 }
 
-int add_content(Data *pdata, const void *m, int size)
+int get_content(Data *p, void *m, int size)
 {
-    if (pdata->cont_pos + size <= pdata->size)
+    if (p->cont_pos + size <= p->size)
     {
-        memcpy(pdata->content + pdata->cont_pos, m, size);
-        pdata->cont_pos += size;
+        memcpy(m, p->content + p->cont_pos, size);
+        p->cont_pos += size;
         return size;
     }
-    if (pdata->cont_pos == pdata->size)
+    if (p->cont_pos == p->size)
     {
         return 0;
     }
-    else
-    {
-        size = pdata->size - pdata->cont_pos;
-        memcpy(pdata->content + pdata->cont_pos, m, size);
-        pdata->cont_pos += size;
-        return size;
-    }
+    size = p->size - p->cont_pos;
+    memcpy(m, p->content + p->cont_pos, size);
+    p->cont_pos += size;
+    return size;
 }
 
-int get_content(Data *pdata, void *m, int size)
-{
-    if (pdata->cont_pos + size <= pdata->size)
-    {
-        memcpy(m, pdata->content + pdata->cont_pos, size);
-        pdata->cont_pos += size;
-        return size;
-    }
-    if (pdata->cont_pos == pdata->size)
-    {
-        return 0;
-    }
-    else
-    {
-        size = pdata->size - pdata->cont_pos;
-        memcpy(m, pdata->content + pdata->cont_pos, size);
-        pdata->cont_pos += size;
-        return size;
-    }
-}
-
-unsigned short _checksum(const char *cont, int size)
+static unsigned short __checksum(const char *cont, int size)
 {
     unsigned int sum = 0;
     if (size & 1)
@@ -201,12 +176,11 @@ unsigned short _checksum(const char *cont, int size)
         sum = (sum >> 16) + (sum & 0xffff);
     }
     return ~sum;
-
 }
 
 unsigned short check_chk(Data *pdata)
 {
-    return _checksum(pdata->content, pdata->size);
+    return __checksum(pdata->content, pdata->size);
 }
 
 int get_rstate(Data *pdata)
@@ -259,7 +233,7 @@ int save_to_file(const char *fname, Data *pdata)
     return pdata->size;
 }
 
-int load_from_file(Map *map, const char *fname)
+int load_from_file(LinkList L, const char *fname)
 {
     unsigned int p_ip;
     int ret = 0;
@@ -291,7 +265,7 @@ int load_from_file(Map *map, const char *fname)
 
         pos += countInfoLen(cont + pos);
         p_size = countDataLen(cont + pos);
-        pdata = append_data(map, ntohl(p_ip), p_size);
+        pdata = append_data(L, ntohl(p_ip), p_size);
         count++;
         
         strcpyn(pdata->content, cont + pos, p_size);
@@ -303,38 +277,44 @@ int load_from_file(Map *map, const char *fname)
 
 void print_data(Data *pdata)
 {
-    char ip_str[20];
-    ipnAddrToStr(ip_str, pdata->ip);
-    printk(KERN_INFO "[%s][%d][%d][%d] %s\n", ip_str, pdata->size, pdata->type, pdata->s_state, pdata->content);
+    // char ip_str[20];
+    // ipnAddrToStr(ip_str, pdata->ip);
+    printk(KERN_INFO "[%d][%d][%d] %s\n", pdata->size, pdata->type, pdata->s_state, pdata->content);
 }
 
-int print_all_datas(Map *map)
+// int print_all_datas(LinkList L)
+// {
+//     char ip_str[20];
+//     int i;
+//     if (L->count > L->size)
+//     {
+//         printk(KERN_INFO "Error: count >= size.\n");
+//         return -1;
+//     }
+//     printk(KERN_INFO "count: %d, size: %d\n", L->count, L->size);
+//     for (i = 0; i < L->count && L->maps[i].ip; ++i)
+//     {
+//         ipnAddrToStr(ip_str, L->maps[i].data->ip);
+//         printk(KERN_INFO "%d. [%s][%d][%d][%d] %s\n", i + 1, ip_str, L->maps[i].data->size,
+//                 L->maps[i].data->type, L->maps[i].data->s_state, L->maps[i].data->content);
+//     }
+//     return i;
+// }
+
+static void __save_queue(Data *p)
 {
-    char ip_str[20];
-    int i;
-    if (map->count > map->size)
-    {
-        printk(KERN_INFO "Error: count >= size.\n");
-        return -1;
-    }
-    printk(KERN_INFO "count: %d, size: %d\n", map->count, map->size);
-    for (i = 0; i < map->count && map->maps[i].ip; ++i)
-    {
-        ipnAddrToStr(ip_str, map->maps[i].data->ip);
-        printk(KERN_INFO "%d. [%s][%d][%d][%d] %s\n", i + 1, ip_str, map->maps[i].data->size,
-                map->maps[i].data->type, map->maps[i].data->s_state, map->maps[i].data->content);
-    }
-    return i;
+    save_to_file(__fname, p);
 }
 
-int save_all_datas(Map *map, const char *fname)
+static void __save_node(Node *p)
 {
-    int i;
-    for (i = 0; i < map->count; ++i)
-    {
-        save_to_file(fname, map->maps[i].data);
-    }
-    return i;
+    TraverseQueue(p->queue, __save_queue);
+}
+
+void save_all_datas(LinkList L, const char *fname)
+{
+    __fname = fname;
+    TraverseList(L, __save_node);
 }
 
 int save_to_file_q(const char *fname, Data *pdata)
@@ -344,3 +324,25 @@ int save_to_file_q(const char *fname, Data *pdata)
     return pdata->size;
 }
 
+static void __print_data(Data *p)
+{
+    print_data(p);
+}
+
+static void __print_node(Node *p)
+{
+    char ip_str[20];
+    ipnAddrToStr(ip_str, p->ip);
+    printk(KERN_INFO "IP: %s, freq: %d\n", ip_str, p->freq);
+}
+
+static void __print_all(Node *p)
+{
+    __print_node(p);
+    TraverseQueue(p->queue, __print_data);
+}
+
+void print_all(LinkList L)
+{
+    TraverseList(L, __print_all);
+}
