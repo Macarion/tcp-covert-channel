@@ -8,6 +8,6 @@
 #define SHFILEPATH "/var/run/covert/"
 #define USERPROGRAM "/home/pi/covert"
 #define DEVNAME "covert"
-#define DEFCD 6
+#define DEFCD 10
 
 #endif

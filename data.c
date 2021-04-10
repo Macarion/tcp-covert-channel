@@ -277,8 +277,6 @@ int load_from_file(LinkList L, const char *fname)
 
 void print_data(Data *pdata)
 {
-    // char ip_str[20];
-    // ipnAddrToStr(ip_str, pdata->ip);
     printk(KERN_INFO "[%d][%d][%d] %s\n", pdata->size, pdata->type, pdata->s_state, pdata->content);
 }
 

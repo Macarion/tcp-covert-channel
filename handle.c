@@ -155,6 +155,7 @@ void recv_data(unsigned int ip, const unsigned short *buf, int size, unsigned in
             add_content(pd, buf, size);
             if (pd->cont_pos == pd->size)
             {
+                pd->content[pd->size] = '\0';
                 set_rstate(pd, _CHEK);
             }
             break;
