@@ -13,6 +13,8 @@ file        文件的读写交互
 time        获取当前时间  
 functions   一些方便使用的函数  
 command     调用用户空间的程序  
+list        链表数据结构  
+queue       队列数据结构  
 
 Makefile 文件可能需要酌情修改。  
 ### 注意：程序处于开发阶段！！！
