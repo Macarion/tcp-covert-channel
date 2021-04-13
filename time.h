@@ -4,7 +4,7 @@
 #include <linux/ktime.h>
 #include <linux/module.h>
 
-#define __CST (8 * 3600)
+#define __CST (8 * 3600) // UTC+8 时区
 
 MODULE_LICENSE("Dual BSD/GPL");
 

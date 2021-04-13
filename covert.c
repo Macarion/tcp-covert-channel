@@ -8,11 +8,11 @@
 #define MAX_OUTPRINT_SIZE 0x7FFF
 
 void print_help_message(void);
-unsigned int ipstr2addr(const char* ip_str);
-int read_file(const char *fname, char *tar);
-int run_command(const char *command);
-int run_sh_file(const char *fname);
-int write_to_module(const char *dname, unsigned int ip, const char *data, int size, int type);
+unsigned int ipstr2addr(const char* ip_str);    // ip转字符串
+int read_file(const char *fname, char *tar);    // 读取文件
+int run_command(const char *command);           // 运行命令
+int run_sh_file(const char *fname);             // 运行脚本
+int write_to_module(const char *dname, unsigned int ip, const char *data, int size, int type); // 写入到内核中
 void print_all(void);
 
 enum MODE
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
         puts("Error: No ip address specified!");
         exit(0);
     }
-    if (mode == MD_SEND)
+    if (mode == MD_SEND) // 发送数据，命令与脚本原封不动发送出去
     {
         switch (type)
         {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    else if (mode == MD_RESP)
+    else if (mode == MD_RESP) // 接收数据，命令与脚本运行后将运行结果发送出去
     {
         switch (type)
         {

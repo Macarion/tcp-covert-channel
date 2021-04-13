@@ -58,17 +58,6 @@ void infonum(int num)
     }
 }
 
-void print(const char *str)
-{
-    struct tty_struct *my_tty;
-    struct tty_operations *tty_op;
-    my_tty = current->signal->tty;
-    if (my_tty != NULL)
-    {
-        tty_op->write(my_tty, (unsigned char *)str, strlen(str));
-    }
-}
-
 int strcpyn(char *tar, const char *str, int size)
 {
     int pos;

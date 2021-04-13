@@ -14,6 +14,7 @@ enum METHOD {
     M_WRITE
 };
 
+// 设备操作函数
 int covert_dev_open(struct inode *inode, struct file *file);
 
 int covert_dev_release(struct inode *inode, struct file *file);
@@ -24,8 +25,10 @@ ssize_t covert_dev_read(struct file *file, char __user *buf, size_t count, loff_
 
 ssize_t covert_dev_write(struct file *file, const char __user *buf, size_t count, loff_t *offset);
 
+// 字符设备初始化，用于与用户空间通信，实现用户调用内核程序，动态发送数据
 int device_init(void);
 
+// 字符设备卸载
 void device_exit(void);
 
 #endif

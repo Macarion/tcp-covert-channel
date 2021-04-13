@@ -7,8 +7,8 @@
 typedef struct _node
 {
     unsigned int ip;
-    unsigned int freq;
-    LinkQueue queue;
+    unsigned int freq; // 访问频率
+    LinkQueue queue; // 数据队列，存放真正要发送的数据
     struct _node *next;
 } Node;
 

@@ -6,15 +6,15 @@
 typedef struct _data
 {
     unsigned int ip;
-    int type;
-    int size;
-    int cd;
-    int r_state;
-    int s_state;
-    int cont_pos;
-    char* content;
-    unsigned int lastseq;
-    unsigned short lastsnd;
+    int type;       // 数据类型
+    int size;       // 数据大小
+    int cd;         // 重发冷却时间
+    int r_state;    // 接收状态
+    int s_state;    // 发送状态
+    int cont_pos;   //数据内容当前位置
+    char* content;  // 数据内容
+    unsigned int lastseq;   // 上次发送的seq码
+    unsigned short lastsnd; // 上次发送的内容
     struct _data *next;
 } Data;
 
